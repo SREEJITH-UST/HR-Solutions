@@ -239,7 +239,7 @@ config.json
 
 # Django static files
 staticfiles/
-static/
+# static/  <-- Commented out to allow static files to be tracked
 media/
 
 # Django migrations (uncomment if you want to ignore migrations)

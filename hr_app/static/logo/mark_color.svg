@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+    <rect width="1024" height="1024" fill="none"/>
+    <!-- Rounded square backdrop (optional for app icon feel) -->
+    <rect x="128" y="128" width="768" height="768" rx="112" ry="112" fill="none" stroke="#374151" stroke-width="20"/>
+    <!-- N with arrow -->
+    <path d="M 220 760 L 220 264 L 300 264 L 600 700 L 600 264 L 684 264 L 684 760 L 604 760 L 300 328 L 300 760 Z" fill="#2563EB"/>
+    <!-- Arrow head on N top-right -->
+    <path d="M 600 264 L 684 264 L 684 348 L 600 264 Z" fill="#10B981"/>
+    <!-- G constructed as a circular segment with notch -->
+    <path d="M 740 392 A 200 200 0 1 0 740 632 L 740 560 L 820 560 L 820 704 A 320 320 0 1 1 820 320 L 820 392 Z" fill="#10B981" opacity="0.85"/>
+    <!-- H simple pillars with crossbar -->
+    <rect x="820" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
+    <rect x="930" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
+    <rect x="820" y="560" width="150" height="36" rx="10" fill="#2563EB"/>
+  </svg>
