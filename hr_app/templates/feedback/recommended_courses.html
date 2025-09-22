@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recommended Courses</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; }
+        .header {
+            width: 100%;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 32px;
+            margin-bottom: 32px;
+        }
+        .header-logo {
+            height: 40px;
+            width: 40px;
+            margin-right: 16px;
+        }
+        .header-title {
+            font-size: 1.7em;
+            font-weight: bold;
+            color: #007bff;
+            letter-spacing: 1px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 40px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #e9ecef;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .footer {
+            width: 100%;
+            background: #fff;
+            text-align: center;
+            padding: 16px 0;
+            color: #888;
+            font-size: 1em;
+            margin-top: 32px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <span class="header-logo" style="display:flex;align-items:center;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 1024 1024">
+            <rect width="1024" height="1024" fill="none"/>
+            <rect x="128" y="128" width="768" height="768" rx="112" ry="112" fill="none" stroke="#374151" stroke-width="20"/>
+            <path d="M 220 760 L 220 264 L 300 264 L 600 700 L 600 264 L 684 264 L 684 760 L 604 760 L 300 328 L 300 760 Z" fill="#2563EB"/>
+            <path d="M 600 264 L 684 264 L 684 348 L 600 264 Z" fill="#10B981"/>
+            <path d="M 740 392 A 200 200 0 1 0 740 632 L 740 560 L 820 560 L 820 704 A 320 320 0 1 1 820 320 L 820 392 Z" fill="#10B981" opacity="0.85"/>
+            <rect x="820" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
+            <rect x="930" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
+            <rect x="820" y="560" width="150" height="36" rx="10" fill="#2563EB"/>
+        </svg>
+    </span>
+    <span class="header-title">NextGenHR</span>
+</div>
+<div class="container">
+    <h2>Recommended Courses</h2>
+    {% if courses %}
+        <ul>
+            {% for course in courses %}
+                <li>{{ course }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No courses recommended at this time.</p>
+    {% endif %}
+</div>
+<div class="footer">
+    &copy; 2025 NextGenHR. All rights reserved.
+</div>
+</body>
+</html>

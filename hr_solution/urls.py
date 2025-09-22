@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from hr_app.views import send_notification_email, login_view, signup_view, forgot_password_view
+from hr_app.views import send_notification_email, login_view, signup_view, forgot_password_view, submit_feedback_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +24,5 @@ urlpatterns = [
     path('', login_view, name='home'),
     path('signup/', signup_view, name='signup'),
     path('forgot-password/', forgot_password_view, name='forgot_password'),
+    path('feedback/', submit_feedback_view, name='submit_feedback'),
 ]

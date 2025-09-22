@@ -1,9 +1,41 @@
+
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from .forms import LoginForm, SignupForm
+
+# Dummy course data
+COURSES = {
+    "communication": ["Effective Communication", "Public Speaking"],
+    "teamwork": ["Team Collaboration", "Conflict Resolution"],
+    "leadership": ["Leadership for new managers", "Strategic Leadership"],
+    "technical": ["Advanced Python", "Data Structures and Algorithms"],
+    "default": ["Introduction to Professional Development"]
+}
+
+def analyze_feedback(feedback):
+    """
+    Analyzes feedback to identify skill gaps and recommend courses.
+    This is a dummy implementation.
+    """
+    feedback_lower = feedback.lower()
+    recommended_courses = set()
+
+    if "communication" in feedback_lower:
+        recommended_courses.update(COURSES["communication"])
+    if "teamwork" in feedback_lower or "collaboration" in feedback_lower:
+        recommended_courses.update(COURSES["teamwork"])
+    if "leadership" in feedback_lower or "managing" in feedback_lower:
+        recommended_courses.update(COURSES["leadership"])
+    if "technical" in feedback_lower or "skill" in feedback_lower:
+        recommended_courses.update(COURSES["technical"])
+
+    if not recommended_courses:
+        recommended_courses.update(COURSES["default"])
+
+    return list(recommended_courses)
 
 # Create your views here.
 
@@ -87,3 +119,10 @@ def forgot_password_view(request):
 
 def home(request):
     return HttpResponse("Welcome to the HR Solutions Home Page!")
+
+def submit_feedback_view(request):
+    if request.method == 'POST':
+        feedback = request.POST.get('feedback')
+        recommended_courses = analyze_feedback(feedback)
+        return render(request, 'feedback/recommended_courses.html', {'courses': recommended_courses})
+    return render(request, 'feedback/submit_feedback.html')
