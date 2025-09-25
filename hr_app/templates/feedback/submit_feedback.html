@@ -100,7 +100,7 @@
     <div class="right" style="padding: 40px 30px; display: flex; flex-direction: column; justify-content: center;">
         <h2>Submit Feedback</h2>
         <form method="post">
-            {% csrf_token %}
+            {% csrf_ccctoken %}
             <textarea name="feedback" rows="10" placeholder="Enter your feedback here..."></textarea>
             <button type="submit" name="submit_feedback">Submit</button>
         </form>
