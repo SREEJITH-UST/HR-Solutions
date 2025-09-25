@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Candidate Dashboard - NextGenHR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .welcome-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        
+        .welcome-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-subtitle {
+            opacity: 0.9;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .profile-summary {
+            grid-column: 1 / -1;
+        }
+        
+        .skill-tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            margin: 0.25rem 0.5rem 0.25rem 0;
+        }
+        
+        .experience-item {
+            border-left: 3px solid #007bff;
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .experience-domain {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .experience-years {
+            color: #666;
+            font-size: 0.875rem;
+        }
+        
+        .score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(#4caf50 0deg, #4caf50 var(--score-deg), #e0e0e0 var(--score-deg));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            position: relative;
+        }
+        
+        .score-circle::before {
+            content: '';
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+        }
+        
+        .score-text {
+            position: relative;
+            z-index: 1;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: #007bff;
+            border: 2px solid #007bff;
+        }
+        
+        .btn-outline:hover {
+            background: #007bff;
+            color: white;
+        }
+        
+        /* Employee Development Styles */
+        .development-section {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+        
+        .development-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+        }
+        
+        .development-content {
+            padding: 2rem;
+        }
+        
+        .course-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .course-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .course-meta {
+            display: flex;
+            gap: 1rem;
+            margin: 0.5rem 0;
+            font-size: 0.875rem;
+            color: #666;
+        }
+        
+        .course-skills {
+            margin: 0.75rem 0;
+        }
+        
+        .skill-tag {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin: 0.125rem;
+        }
+        
+        .course-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .btn-enroll {
+            background: #28a745;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-enroll:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .btn-progress {
+            background: #17a2b8;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            transition: width 0.3s ease;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-recommended { background: #fff3cd; color: #856404; }
+        .status-in-progress { background: #d1ecf1; color: #0c5460; }
+        .status-completed { background: #d4edda; color: #155724; }
+        
+        .no-courses {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #666;
+        }
+        
+        .generate-plan-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .generate-plan-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .education-item, .cert-item, .project-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .item-title {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .item-subtitle {
+            color: #666;
+            font-size: 0.875rem;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+            font-style: italic;
+        }
+        
+        .processing-notice {
+            background: #fff3cd;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 1rem;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .close {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+        
+        .close:hover {
+            color: #333;
+        }
+        
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1rem 0;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            background: #e3f2fd;
+            border-color: #0056b3;
+        }
+        
+        .upload-area.dragover {
+            background: #e3f2fd;
+            border-color: #0056b3;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #007bff;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-text {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .file-info {
+            background: #e8f5e8;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-cancel {
+            background: #6c757d;
+        }
+        
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 1024 1024" style="margin-right: 10px;">
+                <rect x="128" y="128" width="768" height="768" rx="112" ry="112" fill="none" stroke="#007bff" stroke-width="20"/>
+                <path d="M 220 760 L 220 264 L 300 264 L 600 700 L 600 264 L 684 264 L 684 760 L 604 760 L 300 328 L 300 760 Z" fill="#007bff"/>
+            </svg>
+            NextGenHR
+        </div>
+        <div class="user-info">
+            <span>Welcome, {{ user.first_name }}</span>
+            <a href="{% url 'logout' %}" class="btn btn-outline">Logout</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="welcome-section">
+            <h1 class="welcome-title">Welcome to Your Dashboard</h1>
+            <p class="welcome-subtitle">Track your career progress and explore new opportunities</p>
+            
+            <!-- Action Buttons -->
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button onclick="reprocessResume()" class="btn" style="background: #28a745;">
+                    🔄 Reprocess Resume
+                </button>
+                <button onclick="showUploadModal()" class="btn" style="background: #007bff;">
+                    📄 Upload New Resume
+                </button>
+                <a href="/check-processing-status/" class="btn" style="background: #17a2b8;">
+                    📊 Check Status
+                </a>
+            </div>
+        </div>
+
+        {% if not resume_processed %}
+        <div class="processing-notice">
+            <strong>Resume Processing:</strong> Your resume is still being analyzed. Some information may be limited until processing is complete.
+            <a href="/check-processing-status/" class="btn" style="margin-left: 1rem;">Check Status</a>
+        </div>
+        {% endif %}
+
+        {% if candidate_profile %}
+        <div class="dashboard-grid">
+            <!-- Profile Summary -->
+            <div class="card profile-summary">
+                <h2 class="card-title">Profile Summary</h2>
+                {% if candidate_profile.resume_summary %}
+                <p>{{ candidate_profile.resume_summary }}</p>
+                {% else %}
+                <p class="no-data">Resume summary will appear here after processing is complete.</p>
+                {% endif %}
+                
+                <div style="margin-top: 1rem;">
+                    <strong>Experience Level:</strong> {{ candidate_profile.get_experience_level_display }}
+                </div>
+                <div>
+                    <strong>Total Experience:</strong> {{ candidate_profile.get_total_experience_display }}
+                </div>
+            </div>
+
+            <!-- Resume Score -->
+            <div class="card">
+                <h2 class="card-title">Resume Score</h2>
+                <div class="score-circle" style="--score-deg: {{ score_degrees }}deg;">
+                    <div class="score-text">{{ candidate_profile.resume_score }}/100</div>
+                </div>
+                <div style="text-align: center;">
+                    {% if candidate_profile.resume_score >= 80 %}
+                    <span style="color: #4caf50;">Excellent</span>
+                    {% elif candidate_profile.resume_score >= 60 %}
+                    <span style="color: #ff9800;">Good</span>
+                    {% else %}
+                    <span style="color: #f44336;">Needs Improvement</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Skills -->
+            <div class="card">
+                <h2 class="card-title">Skills</h2>
+                {% if candidate_profile.primary_skills %}
+                <div>
+                    <strong>Primary Skills:</strong><br>
+                    {% for skill in candidate_profile.primary_skills %}
+                    <span class="skill-tag">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if candidate_profile.secondary_skills %}
+                <div style="margin-top: 1rem;">
+                    <strong>Secondary Skills:</strong><br>
+                    {% for skill in candidate_profile.secondary_skills %}
+                    <span class="skill-tag" style="background: #f3e5f5; color: #7b1fa2;">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if not candidate_profile.primary_skills and not candidate_profile.secondary_skills %}
+                <p class="no-data">Skills will be extracted from your resume during processing.</p>
+                {% endif %}
+            </div>
+
+            <!-- Domain Experience -->
+            <div class="card">
+                <h2 class="card-title">Domain Experience</h2>
+                {% if candidate_profile.domain_experience %}
+                {% for domain, years in candidate_profile.domain_experience.items %}
+                <div class="experience-item">
+                    <div class="experience-domain">{{ domain }}</div>
+                    <div class="experience-years">{{ years }} years</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="no-data">Domain experience will be analyzed from your resume.</p>
+                {% endif %}
+            </div>
+
+            <!-- Education -->
+            <div class="card">
+                <h2 class="card-title">Education</h2>
+                {% if candidate_profile.education_details %}
+                {% for edu in candidate_profile.education_details %}
+                <div class="education-item">
+                    <div class="item-title">{{ edu.degree }}</div>
+                    <div class="item-subtitle">{{ edu.institution }} - {{ edu.year }}</div>
+                    {% if edu.grade %}<div class="item-subtitle">Grade: {{ edu.grade }}</div>{% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="no-data">Education details will be extracted from your resume.</p>
+                {% endif %}
+            </div>
+
+            <!-- Certifications -->
+            <div class="card">
+                <h2 class="card-title">Certifications</h2>
+                {% if candidate_profile.certifications %}
+                {% for cert in candidate_profile.certifications %}
+                <div class="cert-item">
+                    <div class="item-title">{{ cert.name }}</div>
+                    <div class="item-subtitle">{{ cert.issuer }} - {{ cert.year }}</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="no-data">Certifications will be identified from your resume.</p>
+                {% endif %}
+            </div>
+
+            <!-- Strengths -->
+            <div class="card">
+                <h2 class="card-title">Strengths</h2>
+                {% if candidate_profile.strengths %}
+                <ul>
+                {% for strength in candidate_profile.strengths %}
+                <li>{{ strength }}</li>
+                {% endfor %}
+                </ul>
+                {% else %}
+                <p class="no-data">Strengths will be identified through AI analysis.</p>
+                {% endif %}
+            </div>
+
+            <!-- Areas for Improvement -->
+            <div class="card">
+                <h2 class="card-title">Areas for Improvement</h2>
+                {% if candidate_profile.areas_for_improvement %}
+                <ul>
+                {% for area in candidate_profile.areas_for_improvement %}
+                <li>{{ area }}</li>
+                {% endfor %}
+                </ul>
+                {% else %}
+                <p class="no-data">Improvement suggestions will be provided after analysis.</p>
+                {% endif %}
+            </div>
+
+            <!-- Employee Development Section -->
+            <div class="development-section">
+                <div class="development-header">
+                    <h2 style="margin: 0; font-size: 1.5rem;">🎓 Professional Development</h2>
+                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">AI-powered course recommendations based on your profile</p>
+                </div>
+                
+                <div class="development-content">
+                    {% if candidate_profile.development_plans.all %}
+                        <!-- Show existing development plans -->
+                        {% for plan in candidate_profile.development_plans.all %}
+                        <div class="course-card">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                                <h3 class="course-title">{{ plan.course.title }}</h3>
+                                <span class="status-badge status-{{ plan.status }}">{{ plan.get_status_display }}</span>
+                            </div>
+                            
+                            <p style="color: #666; margin-bottom: 0.75rem;">{{ plan.course.description }}</p>
+                            
+                            <div class="course-meta">
+                                <span>📚 {{ plan.course.provider|title }}</span>
+                                <span>⏱️ {{ plan.course.duration_hours }} hours</span>
+                                <span>📊 Difficulty: {{ plan.course.get_difficulty_level_display }}</span>
+                                <span>⭐ {{ plan.course.rating }}/5.0</span>
+                                {% if plan.course.price > 0 %}
+                                <span>💰 ${{ plan.course.price }}</span>
+                                {% else %}
+                                <span style="color: #28a745;">✨ Free</span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if plan.course.skills_covered %}
+                            <div class="course-skills">
+                                <strong>Skills Covered:</strong>
+                                {% for skill in plan.course.skills_covered %}
+                                <span class="skill-tag">{{ skill }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            <div style="margin: 0.75rem 0;">
+                                <strong>Gap Addressed:</strong> {{ plan.skill_gap_identified }}
+                                <br>
+                                <strong>Priority:</strong> {{ plan.get_priority_level_display }}
+                                <br>
+                                <strong>Reason:</strong> {{ plan.assignment_reason }}
+                            </div>
+                            
+                            {% if plan.status == 'in_progress' or plan.status == 'completed' %}
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ plan.progress_percentage }}%;"></div>
+                            </div>
+                            <small>Progress: {{ plan.progress_percentage }}%</small>
+                            {% endif %}
+                            
+                            <div class="course-actions">
+                                {% if plan.status == 'recommended' %}
+                                <button onclick="enrollCourse({{ plan.id }})" class="btn-enroll">
+                                    🚀 Enroll Now
+                                </button>
+                                {% elif plan.status == 'in_progress' %}
+                                <a href="{{ plan.course.course_url }}" target="_blank" class="btn-enroll">
+                                    📖 Continue Learning
+                                </a>
+                                <button onclick="updateProgress({{ plan.id }})" class="btn-progress">
+                                    📈 Update Progress
+                                </button>
+                                {% elif plan.status == 'completed' %}
+                                <span style="color: #28a745; font-weight: 600;">✅ Completed</span>
+                                {% endif %}
+                                
+                                <a href="{{ plan.course.course_url }}" target="_blank" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                    🔗 View Course
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <!-- Generate new recommendations button -->
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <button onclick="generateDevelopmentPlan()" class="generate-plan-btn">
+                                🤖 Generate New Recommendations
+                            </button>
+                        </div>
+                        
+                    {% else %}
+                        <!-- No development plans yet -->
+                        <div class="no-courses">
+                            <h3>🎯 Ready to Level Up Your Skills?</h3>
+                            <p>Let our AI analyze your profile and recommend personalized courses to advance your career.</p>
+                            <button onclick="generateDevelopmentPlan()" class="generate-plan-btn">
+                                🤖 Get AI Recommendations
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="no-data">
+                <h2>Profile Setup in Progress</h2>
+                <p>Your candidate profile is being created. Please wait for the resume processing to complete.</p>
+                <a href="/processing/" class="btn">Check Processing Status</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Upload Resume Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Upload New Resume</h2>
+                <button class="close" onclick="closeUploadModal()">&times;</button>
+            </div>
+            
+            <form id="uploadForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('resumeFile').click()">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">
+                        <strong>Click to upload</strong> or drag and drop your resume<br>
+                        <small>Supports PDF and DOCX files (Max 10MB)</small>
+                    </div>
+                </div>
+                
+                <input type="file" id="resumeFile" name="resume" accept=".pdf,.docx,.doc" style="display: none;">
+                
+                <div id="fileInfo" class="file-info">
+                    <strong>Selected File:</strong> <span id="fileName"></span><br>
+                    <small>Size: <span id="fileSize"></span></small>
+                </div>
+                
+                <div id="uploadProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div style="text-align: center; color: #666;">
+                        <span id="progressText">Uploading...</span>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="button" class="btn btn-cancel" onclick="closeUploadModal()">Cancel</button>
+                    <button type="submit" class="btn" id="uploadBtn" disabled>Upload & Process</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function reprocessResume() {
+            if (confirm('Are you sure you want to reprocess your current resume? This will update your profile with the latest analysis.')) {
+                fetch('/reprocess-resume/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Resume reprocessing started! Your profile will be updated shortly.');
+                        // Redirect to processing page
+                        window.location.href = '/processing/';
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while reprocessing the resume.');
+                });
+            }
+        }
+
+        function showUploadModal() {
+            document.getElementById('uploadModal').style.display = 'block';
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').style.display = 'none';
+            resetUploadForm();
+        }
+
+        function resetUploadForm() {
+            document.getElementById('uploadForm').reset();
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('uploadProgress').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = true;
+        }
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('resumeFile');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please select a PDF or DOCX file.');
+                return;
+            }
+
+            // Validate file size (10MB limit)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB.');
+                return;
+            }
+
+            // Show file info
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
+            uploadBtn.disabled = false;
+
+            // Update the file input
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Handle form submission
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to upload.');
+                return;
+            }
+
+            formData.append('resume', file);
+            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+            // Show progress
+            document.getElementById('uploadProgress').style.display = 'block';
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+
+            // Simulate progress (you can implement real progress tracking with XMLHttpRequest)
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 10;
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressText').textContent = 'Uploading... ' + progress + '%';
+                
+                if (progress >= 90) {
+                    clearInterval(progressInterval);
+                    document.getElementById('progressText').textContent = 'Processing...';
+                }
+            }, 200);
+
+            // Upload file
+            fetch('/upload-resume/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                document.getElementById('progressFill').style.width = '100%';
+                
+                if (data.status === 'success') {
+                    document.getElementById('progressText').textContent = 'Upload completed!';
+                    setTimeout(() => {
+                        closeUploadModal();
+                        alert('Resume uploaded successfully! Redirecting to processing page...');
+                        window.location.href = '/processing/';
+                    }, 1000);
+                } else {
+                    alert('Error: ' + data.message);
+                    resetUploadForm();
+                }
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                console.error('Error:', error);
+                alert('An error occurred while uploading the resume.');
+                resetUploadForm();
+            });
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('uploadModal');
+            if (e.target === modal) {
+                closeUploadModal();
+            }
+        });
+
+        // Employee Development Functions
+        function generateDevelopmentPlan() {
+            if (!confirm('This will analyze your profile and generate personalized course recommendations. Continue?')) {
+                return;
+            }
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '🤖 Analyzing Profile...';
+            
+            fetch('/generate-development-plan/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while generating the development plan.');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '🤖 Get AI Recommendations';
+            });
+        }
+        
+        function enrollCourse(planId) {
+            if (!confirm('Ready to start this course? You will be redirected to the learning platform.')) {
+                return;
+            }
+            
+            fetch(`/enroll-course/${planId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    if (data.redirect && data.course_url) {
+                        window.open(data.course_url, '_blank');
+                    }
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while enrolling in the course.');
+            });
+        }
+        
+        function updateProgress(planId) {
+            const progress = prompt('Enter your course progress (0-100):', '50');
+            
+            if (progress === null || progress === '') return;
+            
+            const progressNum = parseInt(progress);
+            if (isNaN(progressNum) || progressNum < 0 || progressNum > 100) {
+                alert('Please enter a valid progress percentage (0-100).');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('progress', progressNum);
+            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            
+            fetch(`/update-course-progress/${planId}/`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating progress.');
+            });
+        }
+    </script>
+</body>
+</html>
