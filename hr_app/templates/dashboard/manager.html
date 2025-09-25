@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manager Dashboard - NextGenHR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .welcome-section {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        
+        .welcome-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-subtitle {
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+        
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .candidate-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .candidate-item:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .candidate-info {
+            flex: 1;
+        }
+        
+        .candidate-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .candidate-details {
+            color: #666;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .score-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+        
+        .score-excellent { background: #e8f5e8; color: #2e7d32; }
+        .score-good { background: #fff3e0; color: #f57c00; }
+        .score-poor { background: #ffebee; color: #d32f2f; }
+        
+        .btn {
+            background: #28a745;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: background 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #218838;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: #28a745;
+            border: 2px solid #28a745;
+        }
+        
+        .btn-outline:hover {
+            background: #28a745;
+            color: white;
+        }
+        
+        .quick-actions {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .action-item {
+            padding: 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-item:hover {
+            border-color: #28a745;
+            background: #f8fff8;
+        }
+        
+        .action-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-select, .filter-input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+            font-style: italic;
+        }
+        
+        .recent-activity {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e3f2fd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #1976d2;
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .activity-time {
+            color: #666;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 1024 1024" style="margin-right: 10px;">
+                <rect x="128" y="128" width="768" height="768" rx="112" ry="112" fill="none" stroke="#28a745" stroke-width="20"/>
+                <path d="M 220 760 L 220 264 L 300 264 L 600 700 L 600 264 L 684 264 L 684 760 L 604 760 L 300 328 L 300 760 Z" fill="#28a745"/>
+            </svg>
+            NextGenHR - Manager Portal
+        </div>
+        <div class="user-info">
+            <span>{{ user.first_name }} {{ user.last_name }}</span>
+            <span style="color: #666;">Manager</span>
+            <a href="{% url 'logout' %}" class="btn btn-outline">Logout</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="welcome-section">
+            <h1 class="welcome-title">Manager Dashboard</h1>
+            <p class="welcome-subtitle">Manage your team and track candidate progress</p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_candidates|default:0 }}</div>
+                <div class="stat-label">Total Candidates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ new_applications|default:0 }}</div>
+                <div class="stat-label">New Applications</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ pending_reviews|default:0 }}</div>
+                <div class="stat-label">Pending Reviews</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ interviews_scheduled|default:0 }}</div>
+                <div class="stat-label">Interviews Scheduled</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="left-column">
+                <!-- Candidate Management -->
+                <div class="card">
+                    <div class="card-title">
+                        Candidate Pool
+                        <a href="#" class="btn">View All</a>
+                    </div>
+                    
+                    <div class="filter-bar">
+                        <select class="filter-select">
+                            <option>All Experience Levels</option>
+                            <option>Entry Level</option>
+                            <option>Mid Level</option>
+                            <option>Senior Level</option>
+                        </select>
+                        <select class="filter-select">
+                            <option>All Scores</option>
+                            <option>80+ (Excellent)</option>
+                            <option>60-79 (Good)</option>
+                            <option>Below 60 (Needs Improvement)</option>
+                        </select>
+                        <input type="text" class="filter-input" placeholder="Search by skills...">
+                    </div>
+
+                    {% if candidates %}
+                    {% for candidate in candidates %}
+                    <div class="candidate-item">
+                        <div class="candidate-info">
+                            <div class="candidate-name">{{ candidate.user.first_name }} {{ candidate.user.last_name }}</div>
+                            <div class="candidate-details">
+                                {{ candidate.get_experience_level_display }} • 
+                                {% if candidate.primary_skills %}
+                                    {% for skill in candidate.primary_skills|slice:":3" %}{{ skill }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                    {% if candidate.primary_skills|length > 3 %}...{% endif %}
+                                {% else %}
+                                    Skills pending analysis
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <span class="score-badge {% if candidate.resume_score >= 80 %}score-excellent{% elif candidate.resume_score >= 60 %}score-good{% else %}score-poor{% endif %}">
+                                {{ candidate.resume_score }}/100
+                            </span>
+                            <a href="#" class="btn btn-secondary">View Profile</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="no-data">
+                        No candidates found. New registrations will appear here.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Team Performance -->
+                <div class="card">
+                    <div class="card-title">Team Performance</div>
+                    <div style="text-align: center; padding: 2rem;">
+                        <p style="color: #666;">Team performance metrics will be displayed here.</p>
+                        <canvas id="performanceChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-title">Quick Actions</div>
+                    <div class="quick-actions">
+                        <div class="action-item">
+                            <div class="action-icon">👥</div>
+                            <div>Schedule Interview</div>
+                        </div>
+                        <div class="action-item">
+                            <div class="action-icon">📊</div>
+                            <div>Generate Report</div>
+                        </div>
+                        <div class="action-item">
+                            <div class="action-icon">📧</div>
+                            <div>Send Notifications</div>
+                        </div>
+                        <div class="action-item">
+                            <div class="action-icon">⚙️</div>
+                            <div>Manage Settings</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-title">Recent Activity</div>
+                    <div class="recent-activity">
+                        <div class="activity-item">
+                            <div class="activity-icon">👤</div>
+                            <div class="activity-content">
+                                <div class="activity-title">New candidate registered</div>
+                                <div class="activity-time">2 hours ago</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">✅</div>
+                            <div class="activity-content">
+                                <div class="activity-title">Resume analysis completed</div>
+                                <div class="activity-time">4 hours ago</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">📅</div>
+                            <div class="activity-content">
+                                <div class="activity-title">Interview scheduled</div>
+                                <div class="activity-time">1 day ago</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">📊</div>
+                            <div class="activity-content">
+                                <div class="activity-title">Weekly report generated</div>
+                                <div class="activity-time">2 days ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Tasks -->
+                <div class="card">
+                    <div class="card-title">Upcoming Tasks</div>
+                    <div>
+                        <div style="padding: 1rem; border-left: 4px solid #ffc107; margin-bottom: 0.5rem; background: #fff3cd;">
+                            <div style="font-weight: bold;">Review pending applications</div>
+                            <div style="font-size: 0.875rem; color: #856404;">Due: Today</div>
+                        </div>
+                        <div style="padding: 1rem; border-left: 4px solid #17a2b8; margin-bottom: 0.5rem; background: #d1ecf1;">
+                            <div style="font-weight: bold;">Prepare interview questions</div>
+                            <div style="font-size: 0.875rem; color: #0c5460;">Due: Tomorrow</div>
+                        </div>
+                        <div style="padding: 1rem; border-left: 4px solid #28a745; margin-bottom: 0.5rem; background: #d4edda;">
+                            <div style="font-weight: bold;">Team performance review</div>
+                            <div style="font-size: 0.875rem; color: #155724;">Due: This week</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample chart for team performance (you can replace with actual chart library)
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('performanceChart');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                // Simple placeholder chart
+                ctx.fillStyle = '#28a745';
+                ctx.fillRect(50, 150, 30, 50);
+                ctx.fillRect(100, 120, 30, 80);
+                ctx.fillRect(150, 100, 30, 100);
+                ctx.fillRect(200, 140, 30, 60);
+                ctx.fillRect(250, 110, 30, 90);
+                
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.fillText('Performance metrics will be implemented', 50, 30);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - NextGenHR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .welcome-section {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        
+        .welcome-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-subtitle {
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+        
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .user-item:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .user-info-detail {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .user-details {
+            color: #666;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+        
+        .role-admin { background: #ffebee; color: #d32f2f; }
+        .role-manager { background: #e8f5e8; color: #2e7d32; }
+        .role-candidate { background: #e3f2fd; color: #1976d2; }
+        
+        .btn {
+            background: #dc3545;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: background 0.3s ease;
+            margin-left: 0.25rem;
+        }
+        
+        .btn:hover {
+            background: #c82333;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: #dc3545;
+            border: 2px solid #dc3545;
+        }
+        
+        .btn-outline:hover {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        .system-health {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        
+        .health-item {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        
+        .health-good { background: #d4edda; color: #155724; }
+        .health-warning { background: #fff3cd; color: #856404; }
+        .health-error { background: #f8d7da; color: #721c24; }
+        
+        .health-status {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .health-label {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        
+        .admin-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .action-item {
+            padding: 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-item:hover {
+            border-color: #dc3545;
+            background: #fff8f8;
+        }
+        
+        .action-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-select, .filter-input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+            font-style: italic;
+        }
+        
+        .system-log {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        
+        .log-entry {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .log-timestamp {
+            color: #666;
+        }
+        
+        .log-level-info { color: #17a2b8; }
+        .log-level-warning { color: #ffc107; }
+        .log-level-error { color: #dc3545; }
+        
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 1024 1024" style="margin-right: 10px;">
+                <rect x="128" y="128" width="768" height="768" rx="112" ry="112" fill="none" stroke="#dc3545" stroke-width="20"/>
+                <path d="M 220 760 L 220 264 L 300 264 L 600 700 L 600 264 L 684 264 L 684 760 L 604 760 L 300 328 L 300 760 Z" fill="#dc3545"/>
+            </svg>
+            NextGenHR - Admin Console
+        </div>
+        <div class="user-info">
+            <span>{{ user.first_name }} {{ user.last_name }}</span>
+            <span style="color: #666;">Administrator</span>
+            <a href="{% url 'logout' %}" class="btn btn-outline">Logout</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="welcome-section">
+            <h1 class="welcome-title">Admin Dashboard</h1>
+            <p class="welcome-subtitle">Complete system overview and management controls</p>
+        </div>
+
+        <!-- System Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_users|default:0 }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_candidates|default:0 }}</div>
+                <div class="stat-label">Candidates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_managers|default:0 }}</div>
+                <div class="stat-label">Managers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ resumes_processed|default:0 }}</div>
+                <div class="stat-label">Resumes Processed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ system_uptime|default:"99.9%" }}</div>
+                <div class="stat-label">System Uptime</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="left-column">
+                <!-- User Management -->
+                <div class="card">
+                    <div class="card-title">
+                        User Management
+                        <a href="#" class="btn">Add New User</a>
+                    </div>
+                    
+                    <div class="filter-bar">
+                        <select class="filter-select">
+                            <option>All User Types</option>
+                            <option>Candidates</option>
+                            <option>Managers</option>
+                            <option>Administrators</option>
+                        </select>
+                        <select class="filter-select">
+                            <option>All Status</option>
+                            <option>Active</option>
+                            <option>Inactive</option>
+                            <option>Pending</option>
+                        </select>
+                        <input type="text" class="filter-input" placeholder="Search users...">
+                    </div>
+
+                    {% if all_users %}
+                    {% for user_profile in all_users %}
+                    <div class="user-item">
+                        <div class="user-info-detail">
+                            <div class="user-name">{{ user_profile.user.first_name }} {{ user_profile.user.last_name }}</div>
+                            <div class="user-details">
+                                {{ user_profile.user.email }} • 
+                                Joined {{ user_profile.user.date_joined|date:"M d, Y" }}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <span class="role-badge role-{{ user_profile.user_type }}">
+                                {{ user_profile.get_user_type_display }}
+                            </span>
+                            <a href="#" class="btn btn-secondary btn-sm">Edit</a>
+                            <a href="#" class="btn btn-sm">View</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="no-data">
+                        No users found in the system.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- System Analytics -->
+                <div class="card">
+                    <div class="card-title">System Analytics</div>
+                    <div class="analytics-grid">
+                        <div>
+                            <h4>User Registration Trends</h4>
+                            <div class="chart-container">
+                                <canvas id="registrationChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <h4>Resume Processing Stats</h4>
+                            <div class="chart-container">
+                                <canvas id="processingChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Health -->
+                <div class="card">
+                    <div class="card-title">System Health</div>
+                    <div class="system-health">
+                        <div class="health-item health-good">
+                            <div class="health-status">98%</div>
+                            <div class="health-label">Server Health</div>
+                        </div>
+                        <div class="health-item health-good">
+                            <div class="health-status">Normal</div>
+                            <div class="health-label">Database</div>
+                        </div>
+                        <div class="health-item health-warning">
+                            <div class="health-status">High</div>
+                            <div class="health-label">CPU Usage</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <!-- Admin Actions -->
+                <div class="card">
+                    <div class="card-title">Admin Actions</div>
+                    <div class="admin-actions">
+                        <div class="action-item">
+                            <div class="action-icon">👥</div>
+                            <div>Manage Users</div>
+                        </div>
+                        <div class="action-item">
+                            <div class="action-icon">⚙️</div>
+                            <div>System Settings</div>
+                        </div>
+                        <div class="action-item">
+                            <div class="action-icon">📊</div>
+                            <div>Generate Reports</div>
+                        </div>
+                        <div class="action-item">
+                            <div class="action-icon">🔧</div>
+                            <div>Database Tools</div>
+                        </div>
+                        <div class="action-item">
+                            <div class="action-icon">📧</div>
+                            <div>Email Templates</div>
+                        </div>
+                        <div class="action-item">
+                            <div class="action-icon">🔐</div>
+                            <div>Security Settings</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-title">System Activity</div>
+                    <div class="system-log">
+                        <div class="log-entry">
+                            <span class="log-timestamp">2024-01-15 14:30:22</span>
+                            <span class="log-level-info">[INFO]</span>
+                            New user registration: john.doe@email.com
+                        </div>
+                        <div class="log-entry">
+                            <span class="log-timestamp">2024-01-15 14:25:15</span>
+                            <span class="log-level-info">[INFO]</span>
+                            Resume processing completed for user ID 123
+                        </div>
+                        <div class="log-entry">
+                            <span class="log-timestamp">2024-01-15 14:20:08</span>
+                            <span class="log-level-warning">[WARN]</span>
+                            High CPU usage detected: 85%
+                        </div>
+                        <div class="log-entry">
+                            <span class="log-timestamp">2024-01-15 14:15:33</span>
+                            <span class="log-level-info">[INFO]</span>
+                            Database backup completed successfully
+                        </div>
+                        <div class="log-entry">
+                            <span class="log-timestamp">2024-01-15 14:10:41</span>
+                            <span class="log-level-error">[ERROR]</span>
+                            Failed login attempt from IP 192.168.1.100
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card">
+                    <div class="card-title">Quick Stats</div>
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: #f8f9fa; border-radius: 6px;">
+                            <span>Active Sessions</span>
+                            <strong>{{ active_sessions|default:12 }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: #f8f9fa; border-radius: 6px;">
+                            <span>Pending Processes</span>
+                            <strong>{{ pending_processes|default:3 }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: #f8f9fa; border-radius: 6px;">
+                            <span>Storage Used</span>
+                            <strong>{{ storage_used|default:"2.1 GB" }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: #f8f9fa; border-radius: 6px;">
+                            <span>API Calls Today</span>
+                            <strong>{{ api_calls_today|default:247 }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Maintenance -->
+                <div class="card">
+                    <div class="card-title">Maintenance</div>
+                    <div style="display: grid; gap: 0.5rem;">
+                        <button class="btn btn-secondary" style="width: 100%;">Run Database Cleanup</button>
+                        <button class="btn btn-secondary" style="width: 100%;">Clear Cache</button>
+                        <button class="btn btn-secondary" style="width: 100%;">Generate Backup</button>
+                        <button class="btn" style="width: 100%;">System Restart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample charts for analytics (you can replace with actual chart library)
+        document.addEventListener('DOMContentLoaded', function() {
+            const regChart = document.getElementById('registrationChart');
+            const procChart = document.getElementById('processingChart');
+            
+            if (regChart) {
+                const ctx = regChart.getContext('2d');
+                // Simple line chart placeholder
+                ctx.strokeStyle = '#dc3545';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(50, 150);
+                ctx.lineTo(100, 120);
+                ctx.lineTo(150, 100);
+                ctx.lineTo(200, 140);
+                ctx.lineTo(250, 80);
+                ctx.lineTo(300, 90);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.fillText('Registration trends chart', 50, 30);
+            }
+            
+            if (procChart) {
+                const ctx = procChart.getContext('2d');
+                // Simple bar chart placeholder
+                ctx.fillStyle = '#dc3545';
+                ctx.fillRect(80, 130, 20, 40);
+                ctx.fillRect(120, 110, 20, 60);
+                ctx.fillRect(160, 120, 20, 50);
+                ctx.fillRect(200, 100, 20, 70);
+                
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.fillText('Processing statistics', 50, 30);
+            }
+        });
+    </script>
+</body>
+</html>
