@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="welcome-section">
+        <h1>Welcome, {{ user.get_full_name }}</h1>
+        <p>Employee ID: {{ user.employee.employee_id }}</p>
+        <p>Department: {{ user.employee.department }}</p>
+    </div>
+
+    {% if is_manager %}
+    <div class="manager-section">
+        <h2>Manager Tools</h2>
+        <div class="card">
+            <h3>Submit Employee Feedback</h3>
+            <form method="post" action="{% url 'submit_feedback' %}" class="feedback-form">
+                {% csrf_token %}
+                {{ feedback_form.as_p }}
+                <button type="submit" class="btn btn-primary">Submit Feedback</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="recommendations-section">
+        <h2>Your Course Recommendations</h2>
+        {% if pending_recommendations %}
+        <div class="alert alert-info">
+            You have {{ pending_recommendations }} pending course recommendation(s).
+            <a href="{% url 'view_recommendations' %}" class="btn btn-link">View All</a>
+        </div>
+        {% else %}
+        <p>No pending recommendations at this time.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

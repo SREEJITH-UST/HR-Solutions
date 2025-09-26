@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-ax7yad_yc5g2vsps-!2+_i%(99el6_3$v$$@oj=x4d)mcwiht1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -117,7 +117,39 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Authentication URLs
+LOGIN_URL = 'home'  # URL where users will be redirected to log in
+LOGIN_REDIRECT_URL = 'dashboard'  # URL to redirect after login
+LOGOUT_REDIRECT_URL = 'home'  # URL to redirect after logout
+STATICFILES_DIRS = [
+    BASE_DIR / 'hr_app' / 'static',
+]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your-email@gmail.com'  # Replace with your email
+EMAIL_HOST_PASSWORD = 'your-app-password'  # Replace with your app password
+
+# Login/Logout URLs
+LOGIN_URL = 'home'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'home'
+
+# Session configuration
+SESSION_COOKIE_AGE = 3600  # 1 hour
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Security settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = False  # Set to True in production
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

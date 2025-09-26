@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="recommendations-container">
+    <h1>Your Course Recommendations</h1>
+    
+    {% if recommendations %}
+    <div class="recommendations-list">
+        {% for rec in recommendations %}
+        <div class="recommendation-card">
+            <h3>{{ rec.course.title }}</h3>
+            <p class="course-description">{{ rec.course.description }}</p>
+            
+            <div class="course-details">
+                <span class="badge badge-info">{{ rec.course.get_difficulty_level_display }}</span>
+                <span class="duration">{{ rec.course.duration }} hours</span>
+            </div>
+            
+            <div class="recommendation-details">
+                <p class="confidence">Match Confidence: {{ rec.confidence_score|floatformat:2 }}</p>
+                <p class="based-on">Based on feedback from: {{ rec.feedback.manager.user.get_full_name }}</p>
+                <p class="feedback-date">Feedback Date: {{ rec.feedback.created_at|date:"M d, Y" }}</p>
+            </div>
+            
+            {% if rec.status == 'PENDING' %}
+            <div class="action-buttons">
+                <form method="post" action="{% url 'update_recommendation' rec.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="ACCEPTED">
+                    <button type="submit" class="btn btn-success">Accept</button>
+                </form>
+                <form method="post" action="{% url 'update_recommendation' rec.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="REJECTED">
+                    <button type="submit" class="btn btn-danger">Reject</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="status">
+                Status: {{ rec.get_status_display }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No course recommendations available at this time.</p>
+    {% endif %}
+</div>
+{% endblock %}

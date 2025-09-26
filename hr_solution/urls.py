@@ -16,7 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from hr_app.views import send_notification_email, login_view, signup_view, forgot_password_view
+from hr_app.views import (
+    send_notification_email, login_view, signup_view, forgot_password_view,
+    dashboard_view, create_project_view, submit_feedback_view, view_project_view,
+    submit_recommendations_view
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +28,9 @@ urlpatterns = [
     path('', login_view, name='home'),
     path('signup/', signup_view, name='signup'),
     path('forgot-password/', forgot_password_view, name='forgot_password'),
+    path('dashboard/', dashboard_view, name='dashboard'),
+    path('project/create/', create_project_view, name='create_project'),
+    path('project/view/<int:project_id>/', view_project_view, name='view_project'),
+    path('feedback/submit/<int:project_id>/', submit_feedback_view, name='submit_feedback'),
+    path('feedback/recommendations/', submit_recommendations_view, name='recommendations'),
 ]

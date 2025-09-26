@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="project-header">
+        <h1>{{ project.title }}</h1>
+        <div class="project-meta">
+            <span class="badge badge-{{ project.status|lower }}">{{ project.get_status_display }}</span>
+            <span class="priority">Priority: {{ project.priority }}/5</span>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Project Details</h3>
+                </div>
+                <div class="card-body">
+                    <p><strong>Manager:</strong> {{ project.manager }}</p>
+                    <p><strong>Timeline:</strong> {{ project.start_date }} - {{ project.end_date }}</p>
+                    <p><strong>Team Size:</strong> {{ project.team_size }}</p>
+                    <h4>Required Skills</h4>
+                    <ul class="skill-list">
+                        {% for skill in project.required_skills %}
+                        <li>{{ skill.skill }} (Min. Level: {{ skill.min_proficiency }})</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Resource Matches</h3>
+                </div>
+                <div class="card-body">
+                    <div class="matches-list">
+                        {% for match in matches %}
+                        <div class="match-card {% if match.status == 'ACCEPTED' %}accepted{% elif match.status == 'REJECTED' %}rejected{% endif %}">
+                            <div class="match-header">
+                                <h4>{{ match.employee }}</h4>
+                                <div class="match-scores">
+                                    <span class="badge badge-primary">Match Score: {{ match.match_score|floatformat:2 }}</span>
+                                    <span class="badge badge-info">Skills Match: {{ match.skills_match_percentage|floatformat:0 }}%</span>
+                                </div>
+                            </div>
+
+                            <div class="match-details">
+                                <p><strong>Experience:</strong> {{ match.employee.experience_years }} years</p>
+                                <p><strong>Available:</strong> {{ match.employee.availability_start }} - {{ match.employee.availability_end|default:"Ongoing" }}</p>
+                            </div>
+
+                            {% if match.status == 'SUGGESTED' and user.employee == project.manager %}
+                            <div class="match-actions">
+                                <form method="post" action="{% url 'update_match_status' match.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="ACCEPTED">
+                                    <button type="submit" class="btn btn-success btn-sm">Accept</button>
+                                </form>
+                                <form method="post" action="{% url 'update_match_status' match.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="REJECTED">
+                                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                </form>
+                            </div>
+                            {% endif %}
+
+                            {% if match.status == 'COMPLETED' %}
+                            <div class="feedback-section">
+                                <a href="{% url 'submit_match_feedback' match.id %}" class="btn btn-primary btn-sm">
+                                    Submit Feedback
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <p>No matching resources found.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
