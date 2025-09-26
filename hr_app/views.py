@@ -17,8 +17,23 @@ from .development_service import EmployeeDevelopmentService
 import json
 import threading
 from django.views.decorators.csrf import csrf_protect
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.conf import settings
+import os
+import PyPDF2
+import docx
+import openai
 
 # Create your views here.
+
+from .models import (
+    EmployeeProfile, ResumeUpload, SkillAnalysis, SkillGap, 
+    Course, CourseRecommendation, UserCourseInteraction, 
+    LearningPath, Skill, SkillCategory, CourseProvider
+)
+from .ai_services import ResumeAnalyzer, CourseRecommendationEngine
+
 
 def send_notification_email(request):
     send_mail(
@@ -29,6 +44,7 @@ def send_notification_email(request):
         fail_silently=False,
     )
     return HttpResponse("Email sent successfully!")
+
 
 def check_username_availability(request):
     """AJAX view to check username availability"""
@@ -83,7 +99,8 @@ def login_view(request):
                 )
                 if user:
                     login(request, user)
-                    return redirect('dashboard')
+                    # return redirect('dashboard')
+                    return redirect('professional_development')
                 else:
                     login_error = "Invalid username or password."
         elif 'signup' in request.POST:
@@ -97,6 +114,7 @@ def login_view(request):
                     first_name=signup_form.cleaned_data['first_name'],
                     last_name=signup_form.cleaned_data['last_name']
                 )
+                EmployeeProfile.objects.create(user=user)
                 
                 # Create user profile
                 user_profile = UserProfile.objects.create(
@@ -117,6 +135,7 @@ def login_view(request):
                 # Login the user
                 login(request, user)
                 return redirect('processing')
+                # return redirect('professional_development') 
             else:
                 signup_error = "Signup failed. Please check the details."
 
@@ -126,6 +145,30 @@ def login_view(request):
         'login_error': login_error,
         'signup_error': signup_error,
     })
+def home(request):
+    return redirect('professional_development')
+@login_required
+def professional_development(request):
+    """Main professional development dashboard"""
+    try:
+        profile = request.user.employeeprofile
+    except EmployeeProfile.DoesNotExist:
+        profile = EmployeeProfile.objects.create(user=request.user)
+    
+    recent_resumes = ResumeUpload.objects.filter(user=request.user).order_by('-uploaded_at')[:5]
+    user_courses = UserCourseInteraction.objects.filter(user=request.user)
+    learning_paths = LearningPath.objects.filter(user=request.user, is_active=True)
+    
+    context = {
+        'profile': profile,
+        'recent_resumes': recent_resumes,
+        'user_courses': user_courses,
+        'learning_paths': learning_paths,
+        'total_completed_courses': user_courses.filter(status='completed').count(),
+        'courses_in_progress': user_courses.filter(status='in_progress').count(),
+    }
+    
+    return render(request, 'professional_development/dashboard.html', context)
 
 def signup_view(request):
     signup_form = SignupForm()

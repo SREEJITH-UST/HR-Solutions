@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Development - NextGenHR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .logo svg {
+            width: 32px;
+            height: 32px;
+            margin-right: 0.5rem;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #007bff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 3rem 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon.blue { background: #e0f2fe; color: #0277bd; }
+        .stat-icon.green { background: #e8f5e8; color: #2e7d32; }
+        .stat-icon.purple { background: #f3e5f5; color: #7b1fa2; }
+        .stat-icon.orange { background: #fff3e0; color: #f57c00; }
+
+        .stat-info h3 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-info p {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-content {
+            padding: 1.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #007bff;
+            background: #f8faff;
+        }
+
+        .upload-area.dragover {
+            border-color: #007bff;
+            background: #e0f2fe;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-subtext {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-primary:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #007bff;
+            transition: width 0.3s ease;
+        }
+
+        .analysis-results {
+            display: none;
+        }
+
+        .analysis-results.show {
+            display: block;
+        }
+
+        .skill-gap {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .skill-gap.critical {
+            border-left: 4px solid #dc2626;
+        }
+
+        .skill-gap.important {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .skill-gap.nice-to-have {
+            border-left: 4px solid #10b981;
+        }
+
+        .skill-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .skill-levels {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .level-indicator {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .level-current {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .level-target {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .course-recommendations {
+            margin-top: 1rem;
+        }
+
+        .course-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .course-card:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+        }
+
+        .course-header {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .course-thumbnail {
+            width: 80px;
+            height: 60px;
+            border-radius: 4px;
+            object-fit: cover;
+            background: #f1f5f9;
+        }
+
+        .course-info {
+            flex: 1;
+        }
+
+        .course-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: #1e293b;
+        }
+
+        .course-provider {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .course-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .course-price {
+            font-weight: 600;
+            color: #007bff;
+        }
+
+        .course-price.free {
+            color: #16a34a;
+        }
+
+        .course-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 100px;
+        }
+
+        .recent-uploads {
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            background: #f8fafc;
+        }
+
+        .upload-item:hover {
+            background: #e2e8f0;
+        }
+
+        .file-icon {
+            width: 32px;
+            height: 32px;
+            background: #007bff;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .upload-info {
+            flex: 1;
+        }
+
+        .upload-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .upload-date {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+
+        .success-message {
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: static;
+                order: -1;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .page-header {
+                padding: 2rem 1rem;
+            }
+            
+            .page-header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #16a34a;
+        }
+
+        .notification.error {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                    <rect width="1024" height="1024" fill="none"/>
+                    <rect x="128" y="128" width="768" height="768" rx="112" ry="112" fill="none" stroke="#374151" stroke-width="20"/>
+                    <path d="M 220 760 L 220 264 L 300 264 L 600 700 L 600 264 L 684 264 L 684 760 L 604 760 L 300 328 L 300 760 Z" fill="#2563EB"/>
+                    <path d="M 600 264 L 684 264 L 684 348 L 600 264 Z" fill="#10B981"/>
+                    <path d="M 740 392 A 200 200 0 1 0 740 632 L 740 560 L 820 560 L 820 704 A 320 320 0 1 1 820 320 L 820 392 Z" fill="#10B981" opacity="0.85"/>
+                    <rect x="820" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
+                    <rect x="930" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
+                    <rect x="820" y="560" width="150" height="36" rx="10" fill="#2563EB"/>
+                </svg>
+                NextGenHR
+            </div>
+            <div class="user-profile">
+                <span>Welcome, Sarah Johnson</span>
+                <div class="user-avatar">SJ</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Professional Development</h1>
+            <p>AI-powered skill analysis and personalized course recommendations</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <h3 id="completedCoursesCount">12</h3>
+                    <p>Completed Courses</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 8V6z"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <h3 id="skillLevel">Intermediate</h3>
+                    <p>Current Skill Level</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <h3 id="recommendationsCount">8</h3>
+                    <p>Active Recommendations</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <h3 id="experienceYears">3 years</h3>
+                    <p>Total Experience</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>Resume Analysis & Recommendations</h2>
+                    <p>Upload your resume to get AI-powered skill gap analysis and personalized course recommendations</p>
+                </div>
+                <div class="section-content">
+                    <!-- Upload Area -->
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">Drop your resume here or click to browse</div>
+                        <div class="upload-subtext">Supports PDF, DOC, DOCX files (max 5MB)</div>
+                        <input type="file" class="file-input" id="fileInput" accept=".pdf,.doc,.docx">
+                    </div>
+
+                    <div class="progress-bar" id="progressBar" style="display: none;">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <button class="btn btn-primary" id="getRecommendationsBtn" disabled>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            Get AI Recommendations
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="loading" id="loadingState">
+                        <div class="spinner"></div>
+                        <p>Analyzing your resume with AI...</p>
+                        <p><small>This may take a few moments</small></p>
+                    </div>
+
+                    <!-- Analysis Results -->
+                    <div class="analysis-results" id="analysisResults">
+                        <h3 style="margin: 2rem 0 1rem 0;">Skill Gap Analysis</h3>
+                        <div id="skillGaps">
+                            <!-- Skill gaps will be populated here -->
+                        </div>
+
+                        <h3 style="margin: 2rem 0 1rem 0;">Recommended Courses</h3>
+                        <div id="courseRecommendations">
+                            <!-- Course recommendations will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Recent Uploads -->
+                <div class="content-section recent-uploads">
+                    <div class="section-header">
+                        <h2>Recent Uploads</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="upload-item">
+                            <div class="file-icon">📄</div>
+                            <div class="upload-info">
+                                <div class="upload-name">Resume_2024.pdf</div>
+                                <div class="upload-date">2 days ago</div>
+                            </div>
+                        </div>
+                        <div class="upload-item">
+                            <div class="file-icon">📄</div>
+                            <div class="upload-info">
+                                <div class="upload-name">CV_Updated.docx</div>
+                                <div class="upload-date">1 week ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Quick Actions</h2>
+                    </div>
+                    <div class="section-content">
+                        <button class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;">
+                            View Learning Path
+                        </button>
+                        <button class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;">
+                            Download Report
+                        </button>
+                        <button class="btn btn-secondary" style="width: 100%;">
+                            Schedule Assessment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Global variables
+        let currentUploadId = null;
+        let analysisComplete = false;
+
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const getRecommendationsBtn = document.getElementById('getRecommendationsBtn');
+        const loadingState = document.getElementById('loadingState');
+        const analysisResults = document.getElementById('analysisResults');
+        const skillGaps = document.getElementById('skillGaps');
+        const courseRecommendations = document.getElementById('courseRecommendations');
+
+        // Initialize event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Upload area events
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleDrop);
+
+            // File input change
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // Get recommendations button
+            getRecommendationsBtn.addEventListener('click', handleGetRecommendations);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            // Validate file
+            if (!validateFile(file)) {
+                return;
+            }
+
+            // Show progress
+            showProgress();
+
+            // Upload file
+            uploadFile(file);
+        }
+
+        function validateFile(file) {
+            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+
+            if (!allowedTypes.includes(file.type)) {
+                showNotification('Please upload a PDF, DOC, or DOCX file.', 'error');
+                return false;
+            }
+
+            if (file.size > maxSize) {
+                showNotification('File size must be less than 5MB.', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        function showProgress() {
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+        }
+
+        function updateProgress(percent) {
+            progressFill.style.width = percent + '%';
+        }
+
+        function hideProgress() {
+            progressBar.style.display = 'none';
+        }
+
+        async function uploadFile(file) {
+            try {
+                const formData = new FormData();
+                formData.append('resume', file);
+
+                updateProgress(30);
+
+                const response = await fetch('/professional-development/upload-resume/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+
+                updateProgress(100);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUploadId = data.upload_id;
+                    getRecommendationsBtn.disabled = false;
+                    showNotification(data.message, 'success');
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Upload failed');
+                }
+            } catch (error) {
+                showNotification(error.message, 'error');
+            } finally {
+                hideProgress();
+            }
+        }
+
+        async function handleGetRecommendations() {
+            if (!currentUploadId) {
+                showNotification('Please upload a resume first.', 'error');
+                return;
+            }
+
+            try {
+                loadingState.classList.add('show');
+                getRecommendationsBtn.disabled = true;
+
+                // Step 1: Analyze resume
+                await analyzeResume();
+
+                // Step 2: Generate recommendations
+                await generateRecommendations();
+
+                // Show results
+                analysisResults.classList.add('show');
+                analysisComplete = true;
+
+            } catch (error) {
+                showNotification(error.message, 'error');
+            } finally {
+                loadingState.classList.remove('show');
+                getRecommendationsBtn.disabled = false;
+            }
+        }
+
+        async function analyzeResume() {
+            const response = await fetch('/professional-development/analyze-resume/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ upload_id: currentUploadId })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Analysis failed');
+            }
+
+            return await response.json();
+        }
+
+        async function generateRecommendations() {
+            const response = await fetch('/professional-development/generate-recommendations/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ upload_id: currentUploadId })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Recommendation generation failed');
+            }
+
+            const data = await response.json();
+            displayResults(data);
+            return data;
+        }
+
+        function displayResults(data) {
+            // Clear previous results
+            skillGaps.innerHTML = '';
+            courseRecommendations.innerHTML = '';
+
+            // Group recommendations by skill/priority for display
+            const recommendations = data.recommendations || [];
+            
+            // Create skill gap cards
+            const skillGroups = {};
+            recommendations.forEach(rec => {
+                if (!skillGroups[rec.skill]) {
+                    skillGroups[rec.skill] = {
+                        skill: rec.skill,
+                        priority: rec.priority,
+                        courses: []
+                    };
+                }
+                skillGroups[rec.skill].courses.push(rec);
+            });
+
+            // Display skill gaps
+            Object.values(skillGroups).forEach(group => {
+                const skillGapCard = createSkillGapCard(group);
+                skillGaps.appendChild(skillGapCard);
+            });
+
+            // Display all course recommendations
+            recommendations.forEach(rec => {
+                const courseCard = createCourseCard(rec);
+                courseRecommendations.appendChild(courseCard);
+            });
+
+            showNotification(`Found ${recommendations.length} course recommendations!`, 'success');
+        }
+
+        function createSkillGapCard(group) {
+            const card = document.createElement('div');
+            card.className = `skill-gap ${group.priority}`;
+            
+            card.innerHTML = `
+                <div class="skill-name">${group.skill}</div>
+                <div class="skill-levels">
+                    <span class="level-indicator level-current">Current: Beginner</span>
+                    <span style="margin: 0 0.5rem;">→</span>
+                    <span class="level-indicator level-target">Target: Intermediate</span>
+                </div>
+                <div style="font-size: 0.9rem; color: #64748b;">
+                    Priority: ${group.priority.replace('_', ' ').toUpperCase()} • 
+                    ${group.courses.length} course${group.courses.length > 1 ? 's' : ''} recommended
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function createCourseCard(course) {
+            const card = document.createElement('div');
+            card.className = 'course-card';
+            
+            const thumbnail = course.thumbnail || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA4MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjFGNUY5Ii8+CjxwYXRoIGQ9Ik0zNSAyNUg0NVYzNUgzNVYyNVoiIGZpbGw9IiM5NEEzQjgiLz4KPC9zdmc+';
+            
+            card.innerHTML = `
+                <div class="course-header">
+                    <img src="${thumbnail}" alt="${course.title}" class="course-thumbnail" 
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA4MCA2MCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjFGNUY5Ii8+CjxwYXRoIGQ9Ik0zNSAyNUg0NVYzNUgzNVYyNVoiIGZpbGw9IiM5NEEzQjgiLz4KPC9zdmc+'">
+                    <div class="course-info">
+                        <div class="course-title">${course.title}</div>
+                        <div class="course-provider">${course.provider}</div>
+                        <div class="course-meta">
+                            <span>${course.duration}h</span>
+                            <span>•</span>
+                            <span>${course.level}</span>
+                            <span>•</span>
+                            <span class="course-price ${course.is_free ? 'free' : ''}">${course.is_free ? 'Free' : course.price}</span>
+                            <span>•</span>
+                            <span>⭐ ${course.rating}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="course-actions">
+                    <button class="btn btn-primary" onclick="enrollInCourse('${course.url}')">
+                        View Course
+                    </button>
+                    <button class="btn btn-secondary" onclick="bookmarkCourse(${course.course_id})">
+                        Bookmark
+                    </button>
+                    <button class="btn btn-secondary" onclick="markInterested(${course.course_id})">
+                        Interested
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function enrollInCourse(url) {
+            window.open(url, '_blank');
+        }
+
+        async function bookmarkCourse(courseId) {
+            await updateCourseStatus(courseId, 'bookmarked');
+            showNotification('Course bookmarked!', 'success');
+        }
+
+        async function markInterested(courseId) {
+            await updateCourseStatus(courseId, 'interested');
+            showNotification('Marked as interested!', 'success');
+        }
+
+        async function updateCourseStatus(courseId, status) {
+            try {
+                const response = await fetch('/professional-development/update-course-status/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        course_id: courseId,
+                        status: status
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update course status');
+                }
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
