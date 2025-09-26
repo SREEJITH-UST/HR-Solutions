@@ -27,7 +27,9 @@ from hr_app.views import (
     professional_development_view, feedback_view, mark_action_complete, enroll_feedback_course,
     # Skill-Up Module views
     skillup_dashboard, start_video_assessment, analyze_video_frame, complete_video_assessment,
-    admin_skillup_dashboard, assign_course_api, view_assignment_progress, view_assessment_details
+    admin_skillup_dashboard, assign_course_api, view_assignment_progress, view_assessment_details,
+    # Admin Dashboard views
+    admin_employee_detail, admin_submit_feedback
 )
 
 urlpatterns = [
@@ -68,6 +70,11 @@ urlpatterns = [
     # Skill-Up API endpoints
     path('api/analyze-frame/', analyze_video_frame, name='analyze_video_frame'),
     path('api/assign-course/', assign_course_api, name='assign_course_api'),
+    
+    # Admin Dashboard URLs
+    path('hr-admin/employees/', admin_dashboard, name='admin_dashboard'),
+    path('hr-admin/employee/<int:employee_id>/', admin_employee_detail, name='admin_employee_detail'),
+    path('hr-admin/employee/<int:employee_id>/feedback/', admin_submit_feedback, name='admin_submit_feedback'),
 ]
 
 if settings.DEBUG:

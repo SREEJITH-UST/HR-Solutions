@@ -9,7 +9,8 @@ from django.db import models
 from .forms import LoginForm, SignupForm
 from .models import (
     UserProfile, CandidateProfile, LearningCourse, EmployeeDevelopmentPlan,
-    SkillUpCourse, CourseAssignment, VideoAssessment, AttentionTrackingData, CourseProgress
+    SkillUpCourse, CourseAssignment, VideoAssessment, AttentionTrackingData, CourseProgress,
+    ManagerFeedback, FeedbackAction
 )
 from .services import ResumeProcessingService
 from .development_service import EmployeeDevelopmentService
@@ -1018,3 +1019,171 @@ def view_assessment_details(request, assessment_id):
         return redirect('skillup_dashboard')
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+# Admin Dashboard Views
+@login_required
+def admin_dashboard(request):
+    """Admin dashboard showing all employees"""
+    from django.core.paginator import Paginator
+    
+    # Check if user is admin
+    if not request.user.is_staff and not (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin'):
+        return redirect('candidate_dashboard')
+    
+    # Get all employees
+    employees = User.objects.select_related('userprofile').prefetch_related(
+        'userprofile__candidateprofile'
+    ).order_by('-date_joined')
+    
+    # Filter by search query if provided
+    search_query = request.GET.get('search', '')
+    if search_query:
+        employees = employees.filter(
+            models.Q(first_name__icontains=search_query) |
+            models.Q(last_name__icontains=search_query) |
+            models.Q(email__icontains=search_query)
+        )
+    
+    # Filter by status if provided
+    status_filter = request.GET.get('status', '')
+    if status_filter == 'active':
+        employees = employees.filter(is_active=True, userprofile__candidateprofile__resume_processed=True)
+    elif status_filter == 'inactive':
+        employees = employees.filter(is_active=False)
+    elif status_filter == 'processing':
+        employees = employees.filter(userprofile__candidateprofile__resume_processed=False)
+    
+    # Filter by role if provided
+    role_filter = request.GET.get('role', '')
+    if role_filter:
+        employees = employees.filter(userprofile__role=role_filter)
+    
+    # Pagination
+    paginator = Paginator(employees, 20)  # Show 20 employees per page
+    page_number = request.GET.get('page')
+    employees_page = paginator.get_page(page_number)
+    
+    # Statistics
+    total_employees = User.objects.count()
+    active_employees = User.objects.filter(is_active=True).count()
+    completed_profiles = CandidateProfile.objects.filter(resume_processed=True).count()
+    pending_processing = CandidateProfile.objects.filter(resume_processed=False).count()
+    
+    context = {
+        'employees': employees_page,
+        'total_employees': total_employees,
+        'active_employees': active_employees,
+        'completed_profiles': completed_profiles,
+        'pending_processing': pending_processing,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'role_filter': role_filter,
+    }
+    
+    return render(request, 'admin/dashboard.html', context)
+
+@login_required
+def admin_employee_detail(request, employee_id):
+    """Admin view for detailed employee information"""
+    # Check if user is admin
+    if not request.user.is_staff and not (hasattr(request.user, 'userprofile') and request.user.userprofile.user_type == 'admin'):
+        return redirect('candidate_dashboard')
+    
+    try:
+        employee = User.objects.select_related('userprofile').get(id=employee_id)
+        
+        # Get candidate profile if exists
+        candidate_profile = None
+        try:
+            candidate_profile = employee.userprofile.candidateprofile
+        except:
+            pass
+        
+        # Get development plans
+        development_plans = []
+        if candidate_profile:
+            development_plans = EmployeeDevelopmentPlan.objects.filter(
+                employee_profile=candidate_profile
+            ).select_related('course').order_by('-created_at')[:5]
+        
+        # Get course assignments
+        course_assignments = []
+        try:
+            course_assignments = CourseAssignment.objects.filter(
+                user=employee
+            ).select_related('course').order_by('-assigned_at')[:5]
+        except:
+            pass
+        
+        # Get feedback history for this employee
+        feedback_history = ManagerFeedback.objects.filter(
+            employee=employee
+        ).select_related('manager').order_by('-created_at')
+        
+        context = {
+            'employee': employee,
+            'candidate_profile': candidate_profile,
+            'development_plans': development_plans,
+            'course_assignments': course_assignments,
+            'feedback_history': feedback_history,
+        }
+        
+        return render(request, 'admin/employee_detail.html', context)
+        
+    except User.DoesNotExist:
+        return redirect('admin_dashboard')
+    except Exception as e:
+        print(f"Employee detail error: {str(e)}")
+        return redirect('admin_dashboard')
+
+@csrf_protect
+def admin_submit_feedback(request, employee_id):
+    """Submit feedback for an employee"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Only POST method allowed'})
+    
+    # Check if user is admin
+    if not request.user.is_staff and not (hasattr(request.user, 'userprofile') and request.user.userprofile.user_type == 'admin'):
+        return JsonResponse({'success': False, 'error': 'Access denied'})
+    
+    try:
+        employee = User.objects.get(id=employee_id)
+        
+        # Get form data
+        subject = request.POST.get('subject', '').strip()
+        message = request.POST.get('message', '').strip()
+        rating = int(request.POST.get('rating', 3))
+        areas_of_concern_text = request.POST.get('areas_of_concern', '').strip()
+        
+        # Validate required fields
+        if not subject or not message:
+            return JsonResponse({'success': False, 'error': 'Subject and message are required'})
+        
+        # Process areas of concern
+        areas_of_concern = []
+        if areas_of_concern_text:
+            areas_of_concern = [area.strip() for area in areas_of_concern_text.split(',') if area.strip()]
+        
+        # Create feedback
+        feedback = ManagerFeedback.objects.create(
+            employee=employee,
+            manager=request.user,
+            subject=subject,
+            message=message,
+            rating=rating,
+            areas_of_concern=areas_of_concern
+        )
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Feedback submitted successfully',
+            'feedback_id': feedback.id
+        })
+        
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Employee not found'})
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': f'Invalid data: {str(e)}'})
+    except Exception as e:
+        print(f"Feedback submission error: {str(e)}")
+        return JsonResponse({'success': False, 'error': 'An error occurred while submitting feedback'})

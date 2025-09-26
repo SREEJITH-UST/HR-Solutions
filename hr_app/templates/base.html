@@ -25,6 +25,7 @@
             <a href="/dashboard/" class="btn">Dashboard</a>
             <a href="/skillup/" class="btn">🎓 Skill-Up</a>
             {% if user.is_staff %}
+                <a href="/hr-admin/employees/" class="btn">👥 Employees</a>
                 <a href="/skillup/admin/" class="btn">👨‍💼 Admin</a>
             {% endif %}
             <button onclick="generateDevelopmentPlan()" class="btn btn-generate" type="button">🤖 Generate New Recommendations</button>
