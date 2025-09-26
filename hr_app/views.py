@@ -5,8 +5,12 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.db import models
 from .forms import LoginForm, SignupForm
-from .models import UserProfile, CandidateProfile, LearningCourse, EmployeeDevelopmentPlan
+from .models import (
+    UserProfile, CandidateProfile, LearningCourse, EmployeeDevelopmentPlan,
+    SkillUpCourse, CourseAssignment, VideoAssessment, AttentionTrackingData, CourseProgress
+)
 from .services import ResumeProcessingService
 from .development_service import EmployeeDevelopmentService
 import json
@@ -596,5 +600,421 @@ def enroll_feedback_course(request, course_id):
             return JsonResponse({'status': 'error', 'message': 'Course recommendation not found'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
+
+# ================== SKILL-UP MODULE VIEWS ==================
+
+@login_required
+def skillup_dashboard(request):
+    """Skill-Up Module dashboard view"""
+    try:
+        # Get user's course assignments
+        assignments = CourseAssignment.objects.filter(
+            employee=request.user
+        ).select_related('course', 'assigned_by', 'video_assessment').order_by('-assigned_at')
+        
+        # Calculate statistics
+        stats = {
+            'total_courses': assignments.count(),
+            'completed_courses': assignments.filter(status='completed').count(),
+            'in_progress_courses': assignments.filter(status='in_progress').count(),
+            'pending_assessments': assignments.filter(
+                course__has_video_assessment=True,
+                video_assessment__isnull=True
+            ).count()
+        }
+        
+        # Calculate completion rate
+        if stats['total_courses'] > 0:
+            stats['completion_rate'] = (stats['completed_courses'] / stats['total_courses']) * 100
+        else:
+            stats['completion_rate'] = 0
+        
+        # Get available courses for enrollment
+        assigned_course_ids = assignments.values_list('course_id', flat=True)
+        available_courses = SkillUpCourse.objects.exclude(
+            id__in=assigned_course_ids
+        ).filter(is_active=True)
+        
+        context = {
+            'assignments': assignments,
+            'stats': stats,
+            'available_courses': available_courses
+        }
+        return render(request, 'skillup/dashboard.html', context)
+        
+    except Exception as e:
+        print(f"Skill-Up dashboard error: {str(e)}")
+        return render(request, 'skillup/dashboard.html', {
+            'assignments': [],
+            'stats': {'total_courses': 0, 'completed_courses': 0, 'in_progress_courses': 0, 'pending_assessments': 0, 'completion_rate': 0},
+            'available_courses': []
+        })
+
+@login_required
+def start_video_assessment(request, assignment_id):
+    """Start video assessment for a course assignment"""
+    try:
+        assignment = CourseAssignment.objects.get(
+            id=assignment_id,
+            employee=request.user
+        )
+        
+        if not assignment.course.has_video_assessment:
+            return JsonResponse({'success': False, 'message': 'This course does not have video assessment'})
+        
+        # Create or get existing video assessment
+        video_assessment, created = VideoAssessment.objects.get_or_create(
+            assignment=assignment,
+            defaults={
+                'status': 'scheduled',
+                'started_at': timezone.now()
+            }
+        )
+        
+        if request.method == 'GET':
+            # Return assessment page
+            context = {
+                'assignment': assignment,
+                'assessment': video_assessment
+            }
+            return render(request, 'skillup/video_assessment.html', context)
+            
+        elif request.method == 'POST':
+            # Start the assessment
+            video_assessment.status = 'in_progress'
+            video_assessment.started_at = timezone.now()
+            video_assessment.save()
+            
+            # Update assignment status
+            assignment.status = 'in_progress'
+            assignment.save()
+            
+            return JsonResponse({
+                'success': True,
+                'assessment_id': video_assessment.id,
+                'message': 'Assessment started successfully'
+            })
+            
+    except CourseAssignment.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Assignment not found'})
+    except Exception as e:
+        print(f"Video assessment start error: {str(e)}")
+        return JsonResponse({'success': False, 'message': 'Failed to start assessment'})
+
+@csrf_protect
+def analyze_video_frame(request):
+    """API endpoint to analyze video frames during assessment"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            assessment_id = data.get('assessment_id')
+            frame_data = data.get('frame_data')  # Base64 encoded image
+            timestamp = data.get('timestamp')
+            
+            # Get the video assessment
+            assessment = VideoAssessment.objects.get(id=assessment_id)
+            
+            # Simple AI analysis simulation
+            # In production, this would use real AI models
+            import random
+            
+            analysis_result = {
+                'attention_score': random.uniform(0.7, 1.0),
+                'engagement_level': random.choice(['high', 'medium', 'low']),
+                'facial_expression': random.choice(['focused', 'confused', 'distracted', 'engaged']),
+                'looking_at_screen': random.choice([True, False]),
+                'confidence': random.uniform(0.8, 0.95)
+            }
+            
+            # Save attention tracking data
+            AttentionTrackingData.objects.create(
+                video_assessment=assessment,
+                timestamp=timestamp,
+                attention_score=analysis_result['attention_score'],
+                engagement_level=analysis_result['engagement_level'],
+                facial_expression=analysis_result['facial_expression'],
+                looking_at_screen=analysis_result['looking_at_screen'],
+                raw_data=json.dumps(analysis_result)
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'analysis': analysis_result
+            })
+            
+        except Exception as e:
+            print(f"Frame analysis error: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'message': 'Analysis failed'
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+@login_required
+def complete_video_assessment(request, assessment_id):
+    """Complete video assessment and calculate scores"""
+    if request.method == 'POST':
+        try:
+            assessment = VideoAssessment.objects.get(
+                id=assessment_id,
+                assignment__employee=request.user
+            )
+            
+            # Calculate scores based on attention tracking data
+            tracking_data = AttentionTrackingData.objects.filter(
+                video_assessment=assessment
+            )
+            
+            if tracking_data.exists():
+                # Calculate average attention score
+                avg_attention = tracking_data.aggregate(
+                    avg_score=models.Avg('attention_score')
+                )['avg_score'] or 0
+                
+                # Calculate engagement metrics
+                high_engagement_count = tracking_data.filter(engagement_level='high').count()
+                total_data_points = tracking_data.count()
+                engagement_ratio = high_engagement_count / max(total_data_points, 1)
+                
+                # Calculate looking at screen percentage
+                looking_count = tracking_data.filter(looking_at_screen=True).count()
+                looking_ratio = looking_count / max(total_data_points, 1)
+                
+                # Final score calculation (weighted average)
+                final_score = (
+                    avg_attention * 0.4 +
+                    engagement_ratio * 0.3 +
+                    looking_ratio * 0.3
+                ) * 100
+            else:
+                final_score = 50.0  # Default score if no tracking data
+            
+            # Update assessment
+            assessment.status = 'completed'
+            assessment.completed_at = timezone.now()
+            assessment.final_score = final_score
+            assessment.save()
+            
+            # Update assignment
+            assignment = assessment.assignment
+            assignment.status = 'completed'
+            assignment.score = final_score
+            assignment.completed_at = timezone.now()
+            assignment.save()
+            
+            # Create or update course progress
+            CourseProgress.objects.update_or_create(
+                employee=request.user,
+                course=assignment.course,
+                defaults={
+                    'progress_percentage': 100,
+                    'completion_status': 'completed',
+                    'last_accessed': timezone.now(),
+                    'final_score': final_score
+                }
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'final_score': final_score,
+                'message': 'Assessment completed successfully!'
+            })
+            
+        except VideoAssessment.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Assessment not found'})
+        except Exception as e:
+            print(f"Assessment completion error: {str(e)}")
+            return JsonResponse({'success': False, 'message': 'Failed to complete assessment'})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+@login_required
+def admin_skillup_dashboard(request):
+    """Admin dashboard for Skill-Up Module"""
+    if not request.user.is_staff:
+        return redirect('skillup_dashboard')
+    
+    try:
+        # Get all assignments with related data
+        assignments = CourseAssignment.objects.select_related(
+            'employee', 'course', 'assigned_by', 'video_assessment'
+        ).order_by('-assigned_at')
+        
+        # Calculate overview statistics
+        total_candidates = User.objects.filter(is_staff=False).count()
+        active_assignments = assignments.filter(status__in=['assigned', 'in_progress']).count()
+        in_progress_assessments = VideoAssessment.objects.filter(status='in_progress').count()
+        completed_today = assignments.filter(
+            completed_at__date=timezone.now().date()
+        ).count()
+        
+        # Calculate average completion rate
+        completed_assignments = assignments.filter(status='completed')
+        if assignments.exists():
+            avg_completion_rate = (completed_assignments.count() / assignments.count()) * 100
+        else:
+            avg_completion_rate = 0
+        
+        # Get available courses for assignment
+        available_courses = SkillUpCourse.objects.filter(is_active=True)
+        
+        context = {
+            'assignments': assignments,
+            'total_candidates': total_candidates,
+            'active_assignments': active_assignments,
+            'in_progress_assessments': in_progress_assessments,
+            'completed_today': completed_today,
+            'avg_completion_rate': avg_completion_rate,
+            'available_courses': available_courses
+        }
+        
+        return render(request, 'skillup/admin_dashboard.html', context)
+        
+    except Exception as e:
+        print(f"Admin dashboard error: {str(e)}")
+        return render(request, 'skillup/admin_dashboard.html', {
+            'assignments': [],
+            'total_candidates': 0,
+            'active_assignments': 0,
+            'in_progress_assessments': 0,
+            'completed_today': 0,
+            'avg_completion_rate': 0,
+            'available_courses': []
+        })
+
+@csrf_protect  
+def assign_course_api(request):
+    """API endpoint for assigning courses to candidates"""
+    if request.method == 'POST' and request.user.is_staff:
+        try:
+            data = json.loads(request.body)
+            candidate_id = data.get('candidate_id')
+            course_id = data.get('course_id')
+            
+            candidate = User.objects.get(id=candidate_id, is_staff=False)
+            course = SkillUpCourse.objects.get(id=course_id, is_active=True)
+            
+            # Check if assignment already exists
+            existing_assignment = CourseAssignment.objects.filter(
+                employee=candidate,
+                course=course
+            ).first()
+            
+            if existing_assignment:
+                return JsonResponse({
+                    'success': False, 
+                    'message': 'Course already assigned to this candidate'
+                })
+            
+            # Create new assignment
+            assignment = CourseAssignment.objects.create(
+                employee=candidate,
+                course=course,
+                assigned_by=request.user,
+                status='assigned'
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Course "{course.title}" successfully assigned to {candidate.get_full_name()}'
+            })
+            
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Candidate not found'})
+        except SkillUpCourse.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Course not found'})
+        except Exception as e:
+            print(f"Course assignment error: {str(e)}")
+            return JsonResponse({'success': False, 'message': 'Assignment failed'})
+    
+    return JsonResponse({'success': False, 'message': 'Unauthorized or invalid request'})
+
+@login_required
+def view_assignment_progress(request, assignment_id):
+    """View detailed progress of a specific assignment"""
+    try:
+        assignment = CourseAssignment.objects.select_related(
+            'employee', 'course', 'video_assessment'
+        ).get(id=assignment_id)
+        
+        # Check permissions
+        if not (request.user.is_staff or assignment.employee == request.user):
+            return redirect('skillup_dashboard')
+        
+        # Get course progress
+        course_progress = CourseProgress.objects.filter(
+            employee=assignment.employee,
+            course=assignment.course
+        ).first()
+        
+        # Get attention tracking data if video assessment exists
+        attention_data = []
+        if assignment.video_assessment:
+            attention_data = AttentionTrackingData.objects.filter(
+                video_assessment=assignment.video_assessment
+            ).order_by('timestamp')
+        
+        context = {
+            'assignment': assignment,
+            'course_progress': course_progress,
+            'attention_data': attention_data
+        }
+        
+        return render(request, 'skillup/assignment_progress.html', context)
+        
+    except CourseAssignment.DoesNotExist:
+        return redirect('skillup_dashboard')
+    except Exception as e:
+        print(f"Progress view error: {str(e)}")
+        return redirect('skillup_dashboard')
+
+@login_required
+def view_assessment_details(request, assessment_id):
+    """View detailed video assessment results"""
+    try:
+        assessment = VideoAssessment.objects.select_related(
+            'assignment__employee', 'assignment__course'
+        ).get(id=assessment_id)
+        
+        # Check permissions
+        if not (request.user.is_staff or assessment.assignment.employee == request.user):
+            return redirect('skillup_dashboard')
+        
+        # Get attention tracking data
+        tracking_data = AttentionTrackingData.objects.filter(
+            video_assessment=assessment
+        ).order_by('timestamp')
+        
+        # Calculate analytics
+        analytics = {}
+        if tracking_data.exists():
+            analytics = {
+                'total_duration': (assessment.completed_at - assessment.started_at).total_seconds() if assessment.completed_at else 0,
+                'avg_attention': tracking_data.aggregate(avg=models.Avg('attention_score'))['avg'] or 0,
+                'engagement_breakdown': {
+                    'high': tracking_data.filter(engagement_level='high').count(),
+                    'medium': tracking_data.filter(engagement_level='medium').count(),
+                    'low': tracking_data.filter(engagement_level='low').count()
+                },
+                'screen_focus_percentage': (
+                    tracking_data.filter(looking_at_screen=True).count() / 
+                    max(tracking_data.count(), 1)
+                ) * 100
+            }
+        
+        context = {
+            'assessment': assessment,
+            'tracking_data': tracking_data,
+            'analytics': analytics
+        }
+        
+        return render(request, 'skillup/assessment_details.html', context)
+        
+    except VideoAssessment.DoesNotExist:
+        return redirect('skillup_dashboard')
+    except Exception as e:
+        print(f"Assessment details error: {str(e)}")
+        return redirect('skillup_dashboard')
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})

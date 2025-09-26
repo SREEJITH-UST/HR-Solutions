@@ -24,7 +24,10 @@ from hr_app.views import (
     check_username_availability, dashboard_view, check_processing_status,
     candidate_dashboard, manager_dashboard, admin_dashboard, reprocess_resume, upload_resume,
     generate_development_plan, enroll_course, update_course_progress, custom_logout,
-    professional_development_view, feedback_view, mark_action_complete, enroll_feedback_course
+    professional_development_view, feedback_view, mark_action_complete, enroll_feedback_course,
+    # Skill-Up Module views
+    skillup_dashboard, start_video_assessment, analyze_video_frame, complete_video_assessment,
+    admin_skillup_dashboard, assign_course_api, view_assignment_progress, view_assessment_details
 )
 
 urlpatterns = [
@@ -53,6 +56,18 @@ urlpatterns = [
     path('feedback/', feedback_view, name='feedback'),
     path('mark-action-complete/<int:action_id>/', mark_action_complete, name='mark_action_complete'),
     path('enroll-feedback-course/<int:course_id>/', enroll_feedback_course, name='enroll_feedback_course'),
+    
+    # Skill-Up Module URLs
+    path('skillup/', skillup_dashboard, name='skillup_dashboard'),
+    path('skillup/assessment/<int:assignment_id>/', start_video_assessment, name='start_video_assessment'),
+    path('skillup/assessment/<int:assessment_id>/complete/', complete_video_assessment, name='complete_video_assessment'),
+    path('skillup/admin/', admin_skillup_dashboard, name='admin_skillup_dashboard'),
+    path('skillup/progress/<int:assignment_id>/', view_assignment_progress, name='admin_view_progress'),
+    path('skillup/assessment-details/<int:assessment_id>/', view_assessment_details, name='admin_view_assessment'),
+    
+    # Skill-Up API endpoints
+    path('api/analyze-frame/', analyze_video_frame, name='analyze_video_frame'),
+    path('api/assign-course/', assign_course_api, name='assign_course_api'),
 ]
 
 if settings.DEBUG:

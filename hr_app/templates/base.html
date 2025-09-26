@@ -23,6 +23,10 @@
         <div class="logo">NextGenHR</div>
         <div class="header-actions">
             <a href="/dashboard/" class="btn">Dashboard</a>
+            <a href="/skillup/" class="btn">🎓 Skill-Up</a>
+            {% if user.is_staff %}
+                <a href="/skillup/admin/" class="btn">👨‍💼 Admin</a>
+            {% endif %}
             <button onclick="generateDevelopmentPlan()" class="btn btn-generate" type="button">🤖 Generate New Recommendations</button>
             <a href="/logout/" class="btn" style="background: #dc3545;">Logout</a>
         </div>
