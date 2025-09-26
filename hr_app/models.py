@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 import json
+import uuid
 
 class UserProfile(models.Model):
     USER_TYPES = [
@@ -168,7 +169,7 @@ class EmployeeDevelopmentPlan(models.Model):
     ]
     
     employee_profile = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, related_name='development_plans')
-    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_courses')
+    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_development_plans')
     course = models.ForeignKey(LearningCourse, on_delete=models.CASCADE)
     
     # AI Analysis
@@ -244,4 +245,409 @@ class InterviewSummary(models.Model):
 
     def __str__(self):
         return f"Summary for {self.candidate.username}"
+
+class ManagerFeedback(models.Model):
+    """Manager feedback for employees"""
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_feedbacks')
+    manager = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_feedbacks')
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)], default=3)
+    areas_of_concern = models.JSONField(default=list, blank=True)  # List of areas needing improvement
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Feedback for {self.employee.username} by {self.manager.username}"
+
+class FeedbackAction(models.Model):
+    """Recommended actions based on feedback"""
+    PRIORITY_CHOICES = [
+        ('high', 'High'),
+        ('medium', 'Medium'),
+        ('low', 'Low'),
+    ]
+    
+    feedback = models.ForeignKey(ManagerFeedback, on_delete=models.CASCADE, related_name='actions')
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedback_actions')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    estimated_time_hours = models.IntegerField(default=1)
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Action: {self.title} for {self.employee.username}"
+
+class FeedbackCourseRecommendation(models.Model):
+    """Course recommendations based on feedback"""
+    feedback = models.ForeignKey(ManagerFeedback, on_delete=models.CASCADE, related_name='course_recommendations')
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedback_courses')
+    course = models.ForeignKey(LearningCourse, on_delete=models.CASCADE)
+    feedback_area_addressed = models.CharField(max_length=200)  # Which feedback area this addresses
+    is_enrolled = models.BooleanField(default=False)
+    enrolled_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Course: {self.course.title} for {self.employee.username}"
+
+# Skill-Up Module Models
+class SkillUpCourse(models.Model):
+    """Enhanced course model for skill-up module"""
+    ASSIGNMENT_TYPE_CHOICES = [
+        ('feedback_based', 'Feedback Based'),
+        ('manual', 'Manual Assignment'),
+        ('ai_recommended', 'AI Recommended'),
+    ]
+    
+    DIFFICULTY_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    instructor_name = models.CharField(max_length=100)
+    duration_hours = models.DecimalField(max_digits=5, decimal_places=2)
+    difficulty_level = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='intermediate')
+    skills_covered = models.JSONField(default=list)
+    prerequisites = models.JSONField(default=list)
+    learning_objectives = models.JSONField(default=list)
+    course_url = models.URLField()
+    thumbnail_url = models.URLField(blank=True)
+    assignment_type = models.CharField(max_length=20, choices=ASSIGNMENT_TYPE_CHOICES, default='manual')
+    has_video_assessment = models.BooleanField(default=False)
+    passing_score = models.IntegerField(default=70)  # Percentage
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.title
+
+class CourseAssignment(models.Model):
+    """Course assignments to employees"""
+    ASSIGNMENT_STATUS_CHOICES = [
+        ('assigned', 'Assigned'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('expired', 'Expired'),
+    ]
+    
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_assignments')
+    course = models.ForeignKey(SkillUpCourse, on_delete=models.CASCADE, related_name='assignments')
+    assigned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assigned_skill_courses')
+    feedback = models.ForeignKey(ManagerFeedback, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    status = models.CharField(max_length=20, choices=ASSIGNMENT_STATUS_CHOICES, default='assigned')
+    progress_percentage = models.IntegerField(default=0)
+    score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    due_date = models.DateTimeField(null=True, blank=True)
+    
+    notes = models.TextField(blank=True)
+    
+    class Meta:
+        unique_together = ['employee', 'course']
+        ordering = ['-assigned_at']
+    
+    def __str__(self):
+        return f"{self.course.title} - {self.employee.username}"
+
+class VideoAssessment(models.Model):
+    """Video assessment sessions for courses"""
+    ASSESSMENT_STATUS_CHOICES = [
+        ('scheduled', 'Scheduled'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('technical_error', 'Technical Error'),
+    ]
+    
+    assignment = models.OneToOneField(CourseAssignment, on_delete=models.CASCADE, related_name='video_assessment')
+    
+    # Assessment session details
+    session_id = models.CharField(max_length=100, unique=True)
+    start_time = models.DateTimeField(null=True, blank=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+    duration_minutes = models.IntegerField(null=True, blank=True)
+    
+    # AI Analysis Results
+    attention_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # 0-100
+    engagement_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # 0-100
+    facial_analysis_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # 0-100
+    overall_behavior_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # 0-100
+    
+    # Technical details
+    video_file_path = models.CharField(max_length=500, blank=True)
+    screenshots_path = models.CharField(max_length=500, blank=True)
+    
+    # Assessment results
+    status = models.CharField(max_length=20, choices=ASSESSMENT_STATUS_CHOICES, default='scheduled')
+    passed = models.BooleanField(null=True, blank=True)
+    final_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    
+    # AI feedback
+    ai_feedback = models.JSONField(default=dict, blank=True)  # Detailed AI analysis
+    recommendations = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Assessment for {self.assignment.employee.username} - {self.assignment.course.title}"
+
+class AttentionTrackingData(models.Model):
+    """Real-time attention tracking data during video assessment"""
+    assessment = models.ForeignKey(VideoAssessment, on_delete=models.CASCADE, related_name='attention_data')
+    
+    timestamp = models.DateTimeField()
+    attention_level = models.DecimalField(max_digits=5, decimal_places=2)  # 0-100
+    eye_contact_score = models.DecimalField(max_digits=5, decimal_places=2)  # 0-100
+    facial_expression = models.CharField(max_length=50)  # e.g., 'focused', 'distracted', 'confused'
+    head_position = models.CharField(max_length=50)  # e.g., 'center', 'looking_away'
+    
+    # Technical data
+    confidence_score = models.DecimalField(max_digits=5, decimal_places=2)  # AI confidence in analysis
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['timestamp']
+    
+    def __str__(self):
+        return f"Attention data - {self.assessment.assignment.employee.username} at {self.timestamp}"
+
+class CourseProgress(models.Model):
+    """Detailed progress tracking for courses"""
+    assignment = models.OneToOneField(CourseAssignment, on_delete=models.CASCADE, related_name='detailed_progress')
+    
+    # Module-wise progress
+    modules_completed = models.JSONField(default=list)  # List of completed module IDs
+    quiz_scores = models.JSONField(default=dict)  # Module quiz scores
+    time_spent_minutes = models.IntegerField(default=0)
+    
+    # Engagement metrics
+    login_count = models.IntegerField(default=0)
+    last_accessed = models.DateTimeField(null=True, blank=True)
+    average_session_time = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    
+    # Performance tracking
+    improvement_areas = models.JSONField(default=list)
+    strengths_identified = models.JSONField(default=list)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Progress - {self.assignment.employee.username}: {self.assignment.course.title}"
+    
+class EmployeeProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    department = models.CharField(max_length=100, blank=True)
+    job_title = models.CharField(max_length=100, blank=True)
+    experience_years = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.job_title}"
+
+class FileExtensionValidator:
+    def __init__(self, allowed_extensions):
+        self.allowed_extensions = allowed_extensions
+
+    def __call__(self, value):
+        raise NotImplementedError
+
+class ResumeUpload(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    resume_file = models.FileField(
+        upload_to='resumes/',
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx'])]
+    )
+    original_filename = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    processed = models.BooleanField(default=False)
+    extracted_text = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.original_filename}"
+
+class SkillCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name_plural = "Skill Categories"
+
+    def __str__(self):
+        return self.name
+
+class Skill(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    category = models.ForeignKey(SkillCategory, on_delete=models.CASCADE)
+    is_technical = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.name
+
+class SkillAnalysis(models.Model):
+    SKILL_LEVELS = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced'),
+        ('expert', 'Expert'),
+    ]
+    
+    resume_upload = models.ForeignKey(ResumeUpload, on_delete=models.CASCADE)
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
+    current_level = models.CharField(max_length=20, choices=SKILL_LEVELS)
+    years_experience = models.IntegerField(default=0)
+    confidence_score = models.FloatField(default=0.0)  # AI confidence in skill detection
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['resume_upload', 'skill']
+
+    def __str__(self):
+        return f"{self.skill.name} - {self.current_level}"
+
+class SkillGap(models.Model):
+    PRIORITY_LEVELS = [
+        ('critical', 'Critical'),
+        ('important', 'Important'),
+        ('nice_to_have', 'Nice to Have'),
+    ]
+    
+    resume_upload = models.ForeignKey(ResumeUpload, on_delete=models.CASCADE)
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
+    required_level = models.CharField(max_length=20, choices=SkillAnalysis.SKILL_LEVELS)
+    current_level = models.CharField(max_length=20, choices=SkillAnalysis.SKILL_LEVELS, default='beginner')
+    priority = models.CharField(max_length=20, choices=PRIORITY_LEVELS)
+    job_role_context = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['resume_upload', 'skill']
+
+    def __str__(self):
+        return f"{self.skill.name} Gap - {self.priority}"
+
+class CourseProvider(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    website_url = models.URLField()
+    api_endpoint = models.URLField(blank=True)
+    is_free = models.BooleanField(default=False)
+    logo_url = models.URLField(blank=True)
+    
+    def __str__(self):
+        return self.name
+
+class Course(models.Model):
+    DIFFICULTY_LEVELS = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced'),
+        ('all_levels', 'All Levels'),
+    ]
+    
+    COURSE_TYPES = [
+        ('video', 'Video Course'),
+        ('interactive', 'Interactive'),
+        ('project_based', 'Project Based'),
+        ('text', 'Text/Article'),
+        ('mixed', 'Mixed Format'),
+    ]
+    
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    provider = models.ForeignKey(CourseProvider, on_delete=models.CASCADE)
+    instructor_name = models.CharField(max_length=100, blank=True)
+    course_url = models.URLField()
+    thumbnail_url = models.URLField(blank=True)
+    duration_hours = models.IntegerField(default=0)
+    difficulty_level = models.CharField(max_length=20, choices=DIFFICULTY_LEVELS)
+    course_type = models.CharField(max_length=20, choices=COURSE_TYPES)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    is_free = models.BooleanField(default=False)
+    rating = models.FloatField(default=0.0)
+    total_students = models.IntegerField(default=0)
+    skills = models.ManyToManyField(Skill)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.title} - {self.provider.name}"
+
+class CourseRecommendation(models.Model):
+    resume_upload = models.ForeignKey(ResumeUpload, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    skill_gap = models.ForeignKey(SkillGap, on_delete=models.CASCADE)
+    relevance_score = models.FloatField(default=0.0)
+    recommended_order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['recommended_order', '-relevance_score']
+
+    def __str__(self):
+        return f"{self.course.title} for {self.skill_gap.skill.name}"
+
+class UserCourseInteraction(models.Model):
+    STATUS_CHOICES = [
+        ('interested', 'Interested'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('bookmarked', 'Bookmarked'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    progress_percentage = models.IntegerField(default=0)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ['user', 'course']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.course.title} ({self.status})"
+
+class LearningPath(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    resume_upload = models.ForeignKey(ResumeUpload, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    target_role = models.CharField(max_length=100, blank=True)
+    estimated_completion_weeks = models.IntegerField(default=0)
+    courses = models.ManyToManyField(Course, through='LearningPathCourse')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.user.username}"
+
+class LearningPathCourse(models.Model):
+    learning_path = models.ForeignKey(LearningPath, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    order = models.IntegerField(default=0)
+    is_prerequisite = models.BooleanField(default=False)
+    estimated_weeks = models.IntegerField(default=1)
+
+    class Meta:
+        ordering = ['order']
+        unique_together = ['learning_path', 'course']

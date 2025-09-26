@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% block title %}Skill-Up Dashboard - NextGenHR{% endblock %}
+{% block extra_head %}
+<style>
+.skillup-dashboard { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+.stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+.stat-number { font-size: 2.5rem; font-weight: bold; color: #007bff; }
+.stat-label { color: #666; font-size: 0.9rem; margin-top: 0.5rem; }
+.courses-section { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+.course-card { background: #f8f9fa; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; border-left: 4px solid #007bff; transition: all 0.3s ease; }
+.course-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+.course-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.course-title { font-size: 1.25rem; font-weight: 600; color: #333; margin: 0; }
+.status-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+.status-assigned { background: #fff3cd; color: #856404; }
+.status-in-progress { background: #d1ecf1; color: #0c5460; }
+.status-completed { background: #d4edda; color: #155724; }
+.status-failed { background: #f8d7da; color: #721c24; }
+.progress-bar { width: 100%; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; margin: 0.75rem 0; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #007bff, #0056b3); transition: width 0.3s ease; }
+.course-meta { display: flex; gap: 1rem; margin: 1rem 0; font-size: 0.875rem; color: #666; }
+.course-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+.btn-primary { background: #007bff; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.875rem; transition: background 0.3s; }
+.btn-primary:hover { background: #0056b3; }
+.btn-secondary { background: #6c757d; color: white; }
+.btn-secondary:hover { background: #5a6268; }
+.btn-success { background: #28a745; color: white; }
+.btn-success:hover { background: #218838; }
+.assessment-info { background: #e3f2fd; padding: 1rem; border-radius: 6px; margin: 1rem 0; }
+.video-icon { color: #1976d2; }
+.no-courses { text-align: center; padding: 3rem; color: #666; }
+.filter-bar { display: flex; gap: 1rem; align-items: center; margin-bottom: 2rem; }
+.filter-select { padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 6px; background: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="skillup-dashboard">
+    <div class="page-header" style="margin-bottom: 2rem;">
+        <h1 style="color: #333; margin-bottom: 0.5rem;">📚 Skill-Up Dashboard</h1>
+        <p style="color: #666;">Track your assigned courses and video assessments</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_assignments }}</div>
+            <div class="stat-label">Total Assignments</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ in_progress_count }}</div>
+            <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ completed_count }}</div>
+            <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ avg_score|floatformat:1 }}%</div>
+            <div class="stat-label">Average Score</div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <label for="statusFilter">Filter by Status:</label>
+        <select id="statusFilter" class="filter-select" onchange="filterCourses()">
+            <option value="all">All Courses</option>
+            <option value="assigned">Assigned</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+        </select>
+        
+        <label for="typeFilter">Assignment Type:</label>
+        <select id="typeFilter" class="filter-select" onchange="filterCourses()">
+            <option value="all">All Types</option>
+            <option value="feedback_based">Feedback Based</option>
+            <option value="manual">Manual Assignment</option>
+            <option value="ai_recommended">AI Recommended</option>
+        </select>
+    </div>
+
+    <!-- Courses Section -->
+    <div class="courses-section">
+        <h2 style="margin-bottom: 1.5rem; color: #333;">Your Assigned Courses</h2>
+        
+        {% if assignments %}
+            {% for assignment in assignments %}
+            <div class="course-card" data-status="{{ assignment.status }}" data-type="{{ assignment.course.assignment_type }}">
+                <div class="course-header">
+                    <div>
+                        <h3 class="course-title">{{ assignment.course.title }}</h3>
+                        <p style="margin: 0.5rem 0; color: #666;">{{ assignment.course.description|truncatewords:20 }}</p>
+                    </div>
+                    <span class="status-badge status-{{ assignment.status }}">
+                        {% if assignment.status == 'assigned' %}📋 Assigned
+                        {% elif assignment.status == 'in_progress' %}🔄 In Progress
+                        {% elif assignment.status == 'completed' %}✅ Completed
+                        {% elif assignment.status == 'failed' %}❌ Failed
+                        {% else %}⏸️ {{ assignment.get_status_display }}
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="course-meta">
+                    <span>👨‍🏫 {{ assignment.course.instructor_name }}</span>
+                    <span>⏱️ {{ assignment.course.duration_hours }} hours</span>
+                    <span>📊 {{ assignment.course.get_difficulty_level_display }}</span>
+                    <span>🎯 {% if assignment.course.assignment_type == 'manual' %}Manual Assignment{% elif assignment.course.assignment_type == 'feedback_based' %}Feedback Based{% else %}{{ assignment.course.assignment_type|capfirst }}{% endif %}</span>
+                    {% if assignment.course.has_video_assessment %}
+                    <span class="video-icon">📹 Video Assessment</span>
+                    {% endif %}
+                </div>
+
+                {% if assignment.feedback %}
+                <div style="background: #fff3cd; padding: 0.75rem; border-radius: 6px; margin: 1rem 0; font-size: 0.875rem;">
+                    <strong>📝 Based on Feedback:</strong> {{ assignment.feedback.subject }}
+                </div>
+                {% endif %}
+
+                <!-- Progress Bar -->
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ assignment.progress_percentage }}%;"></div>
+                </div>
+                <small style="color: #666;">Progress: {{ assignment.progress_percentage }}%</small>
+
+                {% if assignment.course.has_video_assessment and assignment.video_assessment %}
+                <div class="assessment-info">
+                    <strong class="video-icon">📹 Video Assessment Status:</strong>
+                    {% if assignment.video_assessment.status == 'completed' %}
+                        <span style="color: #28a745;">✅ Completed</span>
+                        - Score: {{ assignment.video_assessment.final_score|floatformat:1 }}%
+                        {% if assignment.video_assessment.passed %}
+                        <span style="color: #28a745;">(Passed)</span>
+                        {% else %}
+                        <span style="color: #dc3545;">(Failed)</span>
+                        {% endif %}
+                    {% elif assignment.video_assessment.status == 'in_progress' %}
+                        <span style="color: #ffc107;">🔄 In Progress</span>
+                    {% else %}
+                        <span style="color: #6c757d;">⏳ {{ assignment.video_assessment.get_status_display }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="course-actions">
+                    {% if assignment.status == 'assigned' %}
+                        <a href="{% url 'start_course' assignment.id %}" class="btn-primary btn-success">🚀 Start Course</a>
+                    {% elif assignment.status == 'in_progress' %}
+                        <a href="{% url 'continue_course' assignment.id %}" class="btn-primary">📖 Continue Learning</a>
+                        {% if assignment.course.has_video_assessment and not assignment.video_assessment %}
+                            <a href="{% url 'start_video_assessment' assignment.id %}" class="btn-primary video-icon">📹 Start Assessment</a>
+                        {% elif assignment.video_assessment and assignment.video_assessment.status == 'scheduled' %}
+                            <a href="{% url 'start_video_assessment' assignment.id %}" class="btn-primary video-icon">📹 Take Assessment</a>
+                        {% endif %}
+                    {% elif assignment.status == 'completed' %}
+                        <span style="color: #28a745; font-weight: 600;">✅ Course Completed</span>
+                        <a href="{% url 'view_certificate' assignment.id %}" class="btn-primary btn-secondary">🏆 View Certificate</a>
+                        {% if assignment.video_assessment %}
+                            <a href="{% url 'view_assessment_results' assignment.video_assessment.id %}" class="btn-primary btn-secondary video-icon">📊 View Assessment</a>
+                        {% endif %}
+                    {% elif assignment.status == 'failed' %}
+                        <span style="color: #dc3545; font-weight: 600;">❌ Failed</span>
+                        {% if assignment.course.has_video_assessment %}
+                            <a href="{% url 'retake_assessment' assignment.id %}" class="btn-primary">🔄 Retake Assessment</a>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <a href="{{ assignment.course.course_url }}" target="_blank" class="btn-primary btn-secondary">🔗 Course Link</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-courses">
+                <h3>📚 No Courses Assigned Yet</h3>
+                <p>Your assigned courses will appear here once they are assigned by your manager or the AI system.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function filterCourses() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const typeFilter = document.getElementById('typeFilter').value;
+    const courseCards = document.querySelectorAll('.course-card');
+    
+    courseCards.forEach(card => {
+        const cardStatus = card.getAttribute('data-status');
+        const cardType = card.getAttribute('data-type');
+        
+        const statusMatch = statusFilter === 'all' || cardStatus === statusFilter;
+        const typeMatch = typeFilter === 'all' || cardType === typeFilter;
+        
+        if (statusMatch && typeMatch) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Auto-refresh page every 30 seconds to update progress
+setTimeout(() => {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

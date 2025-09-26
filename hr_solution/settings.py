@@ -55,6 +55,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'hr_solution.urls'
 
+LOGIN_REDIRECT_URL = '/professional-development/'
+LOGOUT_REDIRECT_URL = '/'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -144,5 +147,5 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# OpenAI API Configuration
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+# Gemini AI Studio API Configuration
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
