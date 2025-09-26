@@ -1,12 +1,11 @@
-import openai
 import json
 import logging
-import requests
 from typing import List, Dict, Any
 from django.conf import settings
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import timedelta
 from .models import CandidateProfile, LearningCourse, EmployeeDevelopmentPlan
+from .gemini_client import get_gemini_client
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +13,7 @@ class EmployeeDevelopmentService:
     """Service for AI-powered employee development and course recommendations"""
     
     def __init__(self):
-        self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.client = get_gemini_client()
     
     def analyze_skill_gaps(self, employee_profile: CandidateProfile) -> Dict[str, Any]:
         """
@@ -31,11 +30,9 @@ class EmployeeDevelopmentService:
                 "strengths": employee_profile.strengths or [],
                 "areas_for_improvement": employee_profile.areas_for_improvement or []
             }
-            
             # AI prompt for skill gap analysis
             prompt = f"""
             Analyze the following employee profile and identify skill gaps for career growth:
-            
             Employee Details:
             - Current Role: {employee_data['current_role']}
             - Experience Level: {employee_data['experience_level']}
@@ -44,14 +41,12 @@ class EmployeeDevelopmentService:
             - Domain Experience: {', '.join(employee_data['domain_experience']) if employee_data['domain_experience'] else 'None listed'}
             - Strengths: {', '.join(employee_data['strengths']) if employee_data['strengths'] else 'None listed'}
             - Areas for Improvement: {', '.join(employee_data['areas_for_improvement']) if employee_data['areas_for_improvement'] else 'None listed'}
-            
             Based on current industry trends and role requirements, provide:
             1. Top 5 skill gaps that need immediate attention
             2. Recommended skill categories for each gap
             3. Priority level (critical, high, medium, low) for each gap
             4. Estimated current skill level vs target skill level
             5. Specific learning outcomes needed
-            
             Return as JSON format:
             {{
                 "skill_gaps": [
@@ -69,27 +64,15 @@ class EmployeeDevelopmentService:
                 "career_progression_path": "suggested next steps"
             }}
             """
-            
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are an expert HR development consultant specializing in technical career growth and skill gap analysis."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7,
-                max_tokens=1500
-            )
-            
-            analysis_text = response.choices[0].message.content.strip()
-            
-            # Parse JSON response
+            gemini_response = self.client.generate_content(prompt)
+            analysis_text = gemini_response.text.strip()
+            print("[AI RAW SKILL GAP RESPONSE]", analysis_text)
             try:
                 analysis_json = json.loads(analysis_text)
                 return analysis_json
             except json.JSONDecodeError:
-                # Fallback parsing if JSON is malformed
+                print("[AI SKILL GAP JSON ERROR]", analysis_text)
                 return self._fallback_skill_gap_analysis(employee_profile)
-                
         except Exception as e:
             logger.error(f"Error in skill gap analysis: {str(e)}")
             return self._fallback_skill_gap_analysis(employee_profile)
@@ -129,28 +112,23 @@ class EmployeeDevelopmentService:
     
     def recommend_courses(self, skill_gaps: List[Dict], employee_profile: CandidateProfile) -> List[Dict[str, Any]]:
         """
-        Use AI to recommend specific courses based on skill gaps
+        Use AI to recommend specific courses based on skill gaps. No fallback.
         """
         try:
             skill_gap_summary = []
             for gap in skill_gaps:
                 skill_gap_summary.append(f"- {gap['skill_name']} ({gap['priority']} priority)")
-            
             prompt = f"""
             Based on the following skill gaps for an employee, recommend specific online courses:
-            
             Employee Role: {employee_profile.current_role or 'Software Developer'}
             Experience Level: {employee_profile.experience_level or 'intermediate'}
-            
             Skill Gaps Identified:
             {chr(10).join(skill_gap_summary)}
-            
             Recommend 3-5 specific courses for each skill gap. Focus on:
             1. Udemy courses (preferred)
             2. Practical, hands-on learning
             3. Industry-recognized instructors
             4. Courses that build from current level to target level
-            
             Return as JSON:
             {{
                 "course_recommendations": [
@@ -172,141 +150,32 @@ class EmployeeDevelopmentService:
                 ]
             }}
             """
-            
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are an expert learning and development specialist with deep knowledge of online courses and technical training programs."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7,
-                max_tokens=2000
-            )
-            
-            recommendations_text = response.choices[0].message.content.strip()
-            
+            gemini_response = self.client.generate_content(prompt)
+            recommendations_text = gemini_response.text.strip()
+            print("[AI RAW RESPONSE]", recommendations_text)
+            # --- Strip markdown code block if present ---
+            if recommendations_text.startswith('```'):
+                # Remove triple backticks and optional 'json' after them
+                recommendations_text = recommendations_text.lstrip('`')
+                if recommendations_text.lower().startswith('json'):
+                    recommendations_text = recommendations_text[4:]
+                recommendations_text = recommendations_text.strip()
+                if recommendations_text.endswith('```'):
+                    recommendations_text = recommendations_text[:-3].strip()
             try:
                 recommendations_json = json.loads(recommendations_text)
                 return recommendations_json.get('course_recommendations', [])
-            except json.JSONDecodeError:
-                return self._fallback_course_recommendations(skill_gaps)
-                
+            except json.JSONDecodeError as jde:
+                print("[AI JSON ERROR]", jde)
+                print("[AI RESPONSE TEXT]", recommendations_text)
+                return []
         except Exception as e:
+            import traceback
+            print("[AI EXCEPTION]", e)
+            traceback.print_exc()
             logger.error(f"Error in course recommendations: {str(e)}")
-            return self._fallback_course_recommendations(skill_gaps)
-    
-    def _fallback_course_recommendations(self, skill_gaps: List[Dict]) -> List[Dict[str, Any]]:
-        """Fallback course recommendations"""
-        recommendations = []
-        
-        # Enhanced course templates with more options
-        course_templates = {
-            "React": {
-                "title": "React - The Complete Guide (incl Hooks, React Router, Redux)",
-                "provider": "udemy",
-                "skill_category": "frontend",
-                "difficulty_level": "intermediate",
-                "description": "Master React.js fundamentals and advanced concepts",
-                "skills_covered": ["React", "Hooks", "Redux", "React Router"],
-                "estimated_duration_hours": 48,
-                "course_url": "https://www.udemy.com/course/react-the-complete-guide/",
-                "estimated_rating": 4.6,
-                "estimated_price": 84.99
-            },
-            "Python": {
-                "title": "Complete Python Bootcamp From Zero to Hero in Python 3",
-                "provider": "udemy",
-                "skill_category": "backend",
-                "difficulty_level": "beginner",
-                "description": "Learn Python programming from scratch",
-                "skills_covered": ["Python", "OOP", "File Handling", "Web Development"],
-                "estimated_duration_hours": 22,
-                "course_url": "https://www.udemy.com/course/complete-python-bootcamp/",
-                "estimated_rating": 4.6,
-                "estimated_price": 84.99
-            },
-            "JavaScript": {
-                "title": "The Complete JavaScript Course 2024: From Zero to Expert!",
-                "provider": "udemy",
-                "skill_category": "frontend",
-                "difficulty_level": "intermediate",
-                "description": "Modern JavaScript from the beginning! Learn JavaScript ES6+",
-                "skills_covered": ["JavaScript", "ES6+", "DOM Manipulation", "Async Programming"],
-                "estimated_duration_hours": 69,
-                "course_url": "https://www.udemy.com/course/the-complete-javascript-course/",
-                "estimated_rating": 4.7,
-                "estimated_price": 89.99
-            },
-            "Communication": {
-                "title": "Complete Communication Skills Master Class for Life",
-                "provider": "udemy", 
-                "skill_category": "soft_skills",
-                "difficulty_level": "beginner",
-                "description": "Public Speaking, Presentation & Leadership Communication Skills",
-                "skills_covered": ["Public Speaking", "Presentation Skills", "Leadership", "Interpersonal Skills"],
-                "estimated_duration_hours": 8,
-                "course_url": "https://www.udemy.com/course/complete-communication-skills-master-class-for-life/",
-                "estimated_rating": 4.5,
-                "estimated_price": 49.99
-            }
-        }
-        
-        # Default courses if no specific skill gaps match
-        default_courses = [
-            {
-                "title": "Full Stack Web Development Bootcamp",
-                "provider": "udemy",
-                "skill_category": "fullstack",
-                "difficulty_level": "intermediate",
-                "description": "Complete guide to full stack web development",
-                "skills_covered": ["HTML", "CSS", "JavaScript", "React", "Node.js"],
-                "estimated_duration_hours": 52,
-                "course_url": "https://www.udemy.com/course/the-web-developer-bootcamp/",
-                "estimated_rating": 4.7,
-                "estimated_price": 94.99,
-                "target_skill_gap": "Full Stack Development",
-                "learning_outcomes": ["Build complete web applications", "Master modern web technologies"],
-                "why_recommended": "Comprehensive skill development for career growth"
-            },
-            {
-                "title": "Communication Skills for Professionals",
-                "provider": "udemy",
-                "skill_category": "soft_skills", 
-                "difficulty_level": "beginner",
-                "description": "Essential communication skills for workplace success",
-                "skills_covered": ["Communication", "Presentation", "Team Collaboration"],
-                "estimated_duration_hours": 6,
-                "course_url": "https://www.udemy.com/course/communication-skills-complete-course/",
-                "estimated_rating": 4.4,
-                "estimated_price": 39.99,
-                "target_skill_gap": "Communication Skills",
-                "learning_outcomes": ["Improve workplace communication", "Build confidence in presentations"],
-                "why_recommended": "Essential for career advancement and team collaboration"
-            }
-        ]
-        
-        # Try to match skill gaps with templates
-        for gap in skill_gaps[:3]:  # Top 3 gaps
-            skill_name = gap.get('skill_name', '')
-            # Look for partial matches in skill name
-            for template_key, template_course in course_templates.items():
-                if template_key.lower() in skill_name.lower() or skill_name.lower() in template_key.lower():
-                    course = template_course.copy()
-                    course.update({
-                        "target_skill_gap": skill_name,
-                        "learning_outcomes": [f"Master {skill_name} fundamentals", f"Build projects with {skill_name}"],
-                        "why_recommended": f"Addresses {skill_name} skill gap identified in analysis"
-                    })
-                    recommendations.append(course)
-                    break
-        
-        # If no matches found or not enough recommendations, add default courses
-        if len(recommendations) < 2:
-            recommendations.extend(default_courses)
-        
-        # Ensure we have at least 2 recommendations
-        return recommendations[:3]  # Return top 3
-    
+            return []  # No fallback, just return empty
+
     def create_development_plan(self, employee_profile: CandidateProfile, manager_user=None) -> Dict[str, Any]:
         """
         Create a comprehensive development plan for an employee
@@ -323,12 +192,11 @@ class EmployeeDevelopmentService:
             course_recommendations = self.recommend_courses(skill_gaps, employee_profile)
             print(f"Found {len(course_recommendations)} course recommendations")
             
-            # If no recommendations from AI, use fallback
+            # If no recommendations from AI, do not use fallback
             if not course_recommendations:
-                print("No AI recommendations, using fallback...")
-                course_recommendations = self._fallback_course_recommendations(skill_gaps)
-                print(f"Fallback generated {len(course_recommendations)} recommendations")
-            
+                print("No AI recommendations returned.")
+                # Just return empty recommendations, do not call fallback
+
             # Step 3: Create or update courses in database
             created_plans = []
             

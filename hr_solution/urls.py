@@ -23,7 +23,13 @@ from hr_app.views import (
     send_notification_email, login_view, signup_view, forgot_password_view, 
     check_username_availability, dashboard_view, check_processing_status,
     candidate_dashboard, manager_dashboard, admin_dashboard, reprocess_resume, upload_resume,
-    generate_development_plan, enroll_course, update_course_progress, custom_logout
+    generate_development_plan, enroll_course, update_course_progress, custom_logout,
+    professional_development_view, feedback_view, mark_action_complete, enroll_feedback_course,
+    # Skill-Up Module views
+    skillup_dashboard, start_video_assessment, analyze_video_frame, complete_video_assessment,
+    admin_skillup_dashboard, assign_course_api, view_assignment_progress, view_assessment_details,
+    # Admin Dashboard views
+    admin_employee_detail, admin_submit_feedback
 )
 
 urlpatterns = [
@@ -47,6 +53,28 @@ urlpatterns = [
     path('update-course-progress/<int:plan_id>/', update_course_progress, name='update_course_progress'),
     path('logout/', custom_logout, name='logout'),
     path('login/', login_view, name='login'),
+    path('professional-development/', professional_development_view, name='professional_development'),
+    # Feedback URLs
+    path('feedback/', feedback_view, name='feedback'),
+    path('mark-action-complete/<int:action_id>/', mark_action_complete, name='mark_action_complete'),
+    path('enroll-feedback-course/<int:course_id>/', enroll_feedback_course, name='enroll_feedback_course'),
+    
+    # Skill-Up Module URLs
+    path('skillup/', skillup_dashboard, name='skillup_dashboard'),
+    path('skillup/assessment/<int:assignment_id>/', start_video_assessment, name='start_video_assessment'),
+    path('skillup/assessment/<int:assessment_id>/complete/', complete_video_assessment, name='complete_video_assessment'),
+    path('skillup/admin/', admin_skillup_dashboard, name='admin_skillup_dashboard'),
+    path('skillup/progress/<int:assignment_id>/', view_assignment_progress, name='admin_view_progress'),
+    path('skillup/assessment-details/<int:assessment_id>/', view_assessment_details, name='admin_view_assessment'),
+    
+    # Skill-Up API endpoints
+    path('api/analyze-frame/', analyze_video_frame, name='analyze_video_frame'),
+    path('api/assign-course/', assign_course_api, name='assign_course_api'),
+    
+    # Admin Dashboard URLs
+    path('hr-admin/employees/', admin_dashboard, name='admin_dashboard'),
+    path('hr-admin/employee/<int:employee_id>/', admin_employee_detail, name='admin_employee_detail'),
+    path('hr-admin/employee/<int:employee_id>/feedback/', admin_submit_feedback, name='admin_submit_feedback'),
 ]
 
 if settings.DEBUG:
