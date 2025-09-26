@@ -146,14 +146,13 @@ class ResumeProcessingService:
             )
             
             result = response.choices[0].message.content
-            
+            print("[AI RAW RESUME ANALYSIS]", result)
             # Clean the response to ensure it's valid JSON
             result = result.strip()
             if result.startswith('```json'):
                 result = result[7:]
             if result.endswith('```'):
                 result = result[:-3]
-            
             return json.loads(result)
             
         except Exception as e:

@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+{% block extra_head %}
+<style>
+.feedback-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+.feedback-header {
+    background: linear-gradient(135deg, #6f42c1 0%, #9c5bb8 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+.feedback-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+.feedback-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+.feedback-item {
+    background: #f8f9fa;
+    border-left: 4px solid #6f42c1;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0 8px 8px 0;
+}
+.feedback-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #666;
+}
+.rating-stars {
+    color: #ffc107;
+}
+.action-item {
+    background: #e8f5e8;
+    border-left: 4px solid #28a745;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0 8px 8px 0;
+}
+.course-recommendation {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0 8px 8px 0;
+}
+.priority-high { border-left-color: #dc3545; }
+.priority-medium { border-left-color: #ffc107; }
+.priority-low { border-left-color: #28a745; }
+.btn {
+    background: #007bff;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 0.875rem;
+    margin: 0.25rem;
+}
+.btn:hover { background: #0056b3; }
+.btn-success { background: #28a745; }
+.btn-success:hover { background: #218838; }
+.btn-warning { background: #ffc107; color: #212529; }
+.btn-warning:hover { background: #e0a800; }
+.no-feedback {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="feedback-container">
+    <div class="feedback-header">
+        <h1>📝 Feedback & Development Recommendations</h1>
+        <p>Manager feedback and personalized improvement suggestions</p>
+    </div>
+
+    {% if feedbacks %}
+    <div class="feedback-grid">
+        <!-- Recent Feedback -->
+        <div class="feedback-card">
+            <h2 style="margin-bottom: 1rem; color: #333;">Recent Manager Feedback</h2>
+            {% for feedback in feedbacks %}
+            <div class="feedback-item">
+                <div class="feedback-meta">
+                    <strong>{{ feedback.manager.first_name }} {{ feedback.manager.last_name }}</strong>
+                    <span>{{ feedback.created_at|date:"M d, Y" }}</span>
+                </div>
+                <div class="rating-stars" style="margin-bottom: 0.5rem;">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= feedback.rating %}★{% else %}☆{% endif %}
+                    {% endfor %}
+                    <span style="margin-left: 0.5rem; color: #666;">({{ feedback.rating }}/5)</span>
+                </div>
+                <p style="margin-bottom: 0.5rem;"><strong>{{ feedback.subject }}</strong></p>
+                <p>{{ feedback.message }}</p>
+                {% if feedback.areas_of_concern %}
+                <div style="margin-top: 0.75rem;">
+                    <strong>Areas of Concern:</strong>
+                    <ul style="margin: 0.25rem 0; padding-left: 1.2rem;">
+                        {% for area in feedback.areas_of_concern %}
+                        <li>{{ area }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Feedback Statistics -->
+        <div class="feedback-card">
+            <h2 style="margin-bottom: 1rem; color: #333;">Feedback Overview</h2>
+            <div style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Average Rating:</span>
+                    <strong>{{ average_rating|floatformat:1 }}/5.0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Total Feedback:</span>
+                    <strong>{{ feedbacks|length }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Improvement Trends:</span>
+                    <strong style="color: #28a745;">↗ Positive</strong>
+                </div>
+            </div>
+            
+            <h3 style="margin: 1rem 0 0.5rem 0; color: #333;">Most Mentioned Areas</h3>
+            {% for area, count in common_areas.items %}
+            <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;">
+                <span>{{ area }}</span>
+                <span style="background: #e9ecef; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recommended Actions -->
+    <div class="feedback-card">
+        <h2 style="margin-bottom: 1rem; color: #333;">🎯 Recommended Actions</h2>
+        {% if recommended_actions %}
+            {% for action in recommended_actions %}
+            <div class="action-item priority-{{ action.priority }}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h4 style="margin-bottom: 0.5rem;">{{ action.title }}</h4>
+                        <p style="margin-bottom: 0.5rem;">{{ action.description }}</p>
+                        <div style="font-size: 0.875rem; color: #666;">
+                            <span>Priority: <strong style="text-transform: capitalize;">{{ action.priority }}</strong></span>
+                            <span style="margin-left: 1rem;">Estimated Time: {{ action.estimated_time_hours }}h</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="markActionComplete({{ action.id }})">
+                        {% if action.is_completed %}✅ Completed{% else %}Mark Complete{% endif %}
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #666; font-style: italic;">No specific actions recommended at this time.</p>
+        {% endif %}
+    </div>
+
+    <!-- Course Recommendations -->
+    <div class="feedback-card">
+        <h2 style="margin-bottom: 1rem; color: #333;">📚 Recommended Courses</h2>
+        {% if recommended_courses %}
+            {% for course in recommended_courses %}
+            <div class="course-recommendation">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h4 style="margin-bottom: 0.5rem;">{{ course.title }}</h4>
+                        <p style="margin-bottom: 0.5rem;">{{ course.description }}</p>
+                        <div style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">
+                            <span>📚 {{ course.provider }}</span>
+                            <span style="margin-left: 1rem;">⏱️ {{ course.duration_hours }}h</span>
+                            <span style="margin-left: 1rem;">⭐ {{ course.rating }}/5</span>
+                            {% if course.price > 0 %}
+                            <span style="margin-left: 1rem;">💰 ${{ course.price }}</span>
+                            {% else %}
+                            <span style="margin-left: 1rem; color: #28a745;">✨ Free</span>
+                            {% endif %}
+                        </div>
+                        <div style="margin-bottom: 0.5rem;">
+                            <strong>Addresses:</strong> {{ course.feedback_area_addressed }}
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <a href="{{ course.course_url }}" target="_blank" class="btn">View Course</a>
+                        <button class="btn btn-warning" onclick="enrollInCourse({{ course.id }})">Enroll</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #666; font-style: italic;">No specific courses recommended at this time.</p>
+        {% endif %}
+    </div>
+
+    {% else %}
+    <div class="feedback-card">
+        <div class="no-feedback">
+            <h3>No Feedback Available</h3>
+            <p>You haven't received any manager feedback yet. Check back later or contact your manager for updates.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function markActionComplete(actionId) {
+    fetch(`/mark-action-complete/${actionId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Action marked as completed!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred.');
+    });
+}
+
+function enrollInCourse(courseId) {
+    fetch(`/enroll-feedback-course/${courseId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Successfully enrolled in course!');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred.');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

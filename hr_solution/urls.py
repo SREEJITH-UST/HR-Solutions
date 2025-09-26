@@ -23,7 +23,8 @@ from hr_app.views import (
     send_notification_email, login_view, signup_view, forgot_password_view, 
     check_username_availability, dashboard_view, check_processing_status,
     candidate_dashboard, manager_dashboard, admin_dashboard, reprocess_resume, upload_resume,
-    generate_development_plan, enroll_course, update_course_progress, custom_logout
+    generate_development_plan, enroll_course, update_course_progress, custom_logout,
+    professional_development_view, feedback_view, mark_action_complete, enroll_feedback_course
 )
 
 urlpatterns = [
@@ -47,6 +48,11 @@ urlpatterns = [
     path('update-course-progress/<int:plan_id>/', update_course_progress, name='update_course_progress'),
     path('logout/', custom_logout, name='logout'),
     path('login/', login_view, name='login'),
+    path('professional-development/', professional_development_view, name='professional_development'),
+    # Feedback URLs
+    path('feedback/', feedback_view, name='feedback'),
+    path('mark-action-complete/<int:action_id>/', mark_action_complete, name='mark_action_complete'),
+    path('enroll-feedback-course/<int:course_id>/', enroll_feedback_course, name='enroll_feedback_course'),
 ]
 
 if settings.DEBUG:

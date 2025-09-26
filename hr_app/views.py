@@ -502,3 +502,99 @@ def custom_logout(request):
     else:
         logout(request)
         return render(request, 'accounts/logout_feedback.html', {'feedback_submitted': False})
+
+@login_required
+def professional_development_view(request):
+    user_profile = UserProfile.objects.get(user=request.user)
+    candidate_profile = CandidateProfile.objects.get(user_profile=user_profile)
+    context = {
+        'user_profile': user_profile,
+        'candidate_profile': candidate_profile,
+    }
+    return render(request, 'dashboard/professional_development.html', context)
+
+@login_required
+def feedback_view(request):
+    """Display manager feedback and recommendations"""
+    from .models import ManagerFeedback, FeedbackAction, FeedbackCourseRecommendation
+    from collections import Counter
+    from django.db.models import Avg
+    
+    # Get all feedback for the current user
+    feedbacks = ManagerFeedback.objects.filter(employee=request.user)
+    
+    if feedbacks.exists():
+        # Calculate average rating
+        average_rating = feedbacks.aggregate(Avg('rating'))['rating__avg'] or 0
+        
+        # Get common areas of concern
+        all_areas = []
+        for feedback in feedbacks:
+            if feedback.areas_of_concern:
+                all_areas.extend(feedback.areas_of_concern)
+        common_areas = dict(Counter(all_areas).most_common(5))
+        
+        # Get recommended actions
+        recommended_actions = FeedbackAction.objects.filter(employee=request.user).order_by('priority', '-created_at')
+        
+        # Get course recommendations
+        recommended_courses = FeedbackCourseRecommendation.objects.filter(employee=request.user).select_related('course')
+        
+        context = {
+            'feedbacks': feedbacks,
+            'average_rating': average_rating,
+            'common_areas': common_areas,
+            'recommended_actions': recommended_actions,
+            'recommended_courses': recommended_courses,
+        }
+    else:
+        context = {
+            'feedbacks': None,
+            'average_rating': 0,
+            'common_areas': {},
+            'recommended_actions': [],
+            'recommended_courses': [],
+        }
+    
+    return render(request, 'dashboard/feedback.html', context)
+
+@login_required
+def mark_action_complete(request, action_id):
+    """Mark a feedback action as completed"""
+    if request.method == 'POST':
+        try:
+            from .models import FeedbackAction
+            action = FeedbackAction.objects.get(id=action_id, employee=request.user)
+            action.is_completed = True
+            action.completed_at = timezone.now()
+            action.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Action marked as completed'})
+        except FeedbackAction.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Action not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+@login_required
+def enroll_feedback_course(request, course_id):
+    """Enroll in a course recommended based on feedback"""
+    if request.method == 'POST':
+        try:
+            from .models import FeedbackCourseRecommendation
+            course_rec = FeedbackCourseRecommendation.objects.get(
+                id=course_id, 
+                employee=request.user
+            )
+            course_rec.is_enrolled = True
+            course_rec.enrolled_at = timezone.now()
+            course_rec.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Successfully enrolled in course'})
+        except FeedbackCourseRecommendation.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Course recommendation not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})

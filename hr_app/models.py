@@ -244,4 +244,54 @@ class InterviewSummary(models.Model):
 
     def __str__(self):
         return f"Summary for {self.candidate.username}"
+
+class ManagerFeedback(models.Model):
+    """Manager feedback for employees"""
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_feedbacks')
+    manager = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_feedbacks')
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)], default=3)
+    areas_of_concern = models.JSONField(default=list, blank=True)  # List of areas needing improvement
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Feedback for {self.employee.username} by {self.manager.username}"
+
+class FeedbackAction(models.Model):
+    """Recommended actions based on feedback"""
+    PRIORITY_CHOICES = [
+        ('high', 'High'),
+        ('medium', 'Medium'),
+        ('low', 'Low'),
+    ]
+    
+    feedback = models.ForeignKey(ManagerFeedback, on_delete=models.CASCADE, related_name='actions')
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedback_actions')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    estimated_time_hours = models.IntegerField(default=1)
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Action: {self.title} for {self.employee.username}"
+
+class FeedbackCourseRecommendation(models.Model):
+    """Course recommendations based on feedback"""
+    feedback = models.ForeignKey(ManagerFeedback, on_delete=models.CASCADE, related_name='course_recommendations')
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedback_courses')
+    course = models.ForeignKey(LearningCourse, on_delete=models.CASCADE)
+    feedback_area_addressed = models.CharField(max_length=200)  # Which feedback area this addresses
+    is_enrolled = models.BooleanField(default=False)
+    enrolled_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Course: {self.course.title} for {self.employee.username}"

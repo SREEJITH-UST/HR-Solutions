@@ -66,10 +66,12 @@ class EmployeeDevelopmentService:
             """
             gemini_response = self.client.generate_content(prompt)
             analysis_text = gemini_response.text.strip()
+            print("[AI RAW SKILL GAP RESPONSE]", analysis_text)
             try:
                 analysis_json = json.loads(analysis_text)
                 return analysis_json
             except json.JSONDecodeError:
+                print("[AI SKILL GAP JSON ERROR]", analysis_text)
                 return self._fallback_skill_gap_analysis(employee_profile)
         except Exception as e:
             logger.error(f"Error in skill gap analysis: {str(e)}")
