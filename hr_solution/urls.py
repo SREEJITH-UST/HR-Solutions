@@ -27,6 +27,8 @@ from hr_app.views import (
     professional_development_view, feedback_view, mark_action_complete, enroll_feedback_course,
     # Assessment endpoints
     start_action_assessment, submit_action_assessment, start_course_assessment, submit_course_assessment,
+    # Session management endpoints
+    session_status, extend_session,
     # Skill-Up Module views
     skillup_dashboard, start_video_assessment, analyze_video_frame, complete_video_assessment,
     admin_skillup_dashboard, assign_course_api, view_assignment_progress, view_assessment_details,
@@ -83,10 +85,16 @@ urlpatterns = [
     
     # AI Feedback Suggestion API
     path('api/ai-feedback-suggestion/', ai_feedback_suggestion, name='ai_feedback_suggestion'),
-    path('start-action-assessment/<int:id>/', start_action_assessment, name='start_action_assessment'),  # added assessment endpoint
-    path('submit-action-assessment/<int:id>/', submit_action_assessment, name='submit_action_assessment'),  # added assessment endpoint
-    path('start-course-assessment/<int:assignment_id>/', start_course_assessment, name='start_course_assessment'),  # course assessment endpoint
-    path('submit-course-assessment/<int:assignment_id>/', submit_course_assessment, name='submit_course_assessment'),  # course assessment endpoint
+    
+    # Assessment endpoints
+    path('start-action-assessment/<int:id>/', start_action_assessment, name='start_action_assessment'),
+    path('submit-action-assessment/<int:id>/', submit_action_assessment, name='submit_action_assessment'),
+    path('start-course-assessment/<int:assignment_id>/', start_course_assessment, name='start_course_assessment'),
+    path('submit-course-assessment/<int:assignment_id>/', submit_course_assessment, name='submit_course_assessment'),
+    
+    # Session management API
+    path('api/session-status/', session_status, name='session_status'),
+    path('api/extend-session/', extend_session, name='extend_session'),
 ]
 
 if settings.DEBUG:
