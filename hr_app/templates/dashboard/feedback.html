@@ -1,0 +1,869 @@
+{% extends 'base.html' %}
+{% block extra_head %}
+<style>
+.feedback-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+.feedback-header {
+    background: linear-gradient(135deg, #6f42c1 0%, #9c5bb8 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+.feedback-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+.feedback-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+.feedback-item {
+    background: #f8f9fa;
+    border-left: 4px solid #6f42c1;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0 8px 8px 0;
+}
+.feedback-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #666;
+}
+.rating-stars {
+    color: #ffc107;
+}
+.action-item {
+    background: #e8f5e8;
+    border-left: 4px solid #28a745;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0 8px 8px 0;
+}
+.course-recommendation {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0 8px 8px 0;
+}
+.priority-high { border-left-color: #dc3545; }
+.priority-medium { border-left-color: #ffc107; }
+.priority-low { border-left-color: #28a745; }
+.btn {
+    background: #007bff;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 0.875rem;
+    margin: 0.25rem;
+}
+.btn:hover { background: #0056b3; }
+.btn-success { background: #28a745; }
+.btn-success:hover { background: #218838; }
+.btn-warning { background: #ffc107; color: #212529; }
+.btn-warning:hover { background: #e0a800; }
+.no-feedback {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 100%;
+    position: relative;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="feedback-container">
+    <div class="feedback-header">
+        <h1>📝 Feedback & Development Recommendations</h1>
+        <p>Manager feedback and personalized improvement suggestions</p>
+    </div>
+
+    {% if feedbacks %}
+    <div class="feedback-grid">
+        <!-- Recent Feedback -->
+        <div class="feedback-card">
+            <h2 style="margin-bottom: 1rem; color: #333;">Recent Manager Feedback</h2>
+            {% for feedback in feedbacks %}
+            <div class="feedback-item">
+                <div class="feedback-meta">
+                    <strong>{{ feedback.manager.first_name }} {{ feedback.manager.last_name }}</strong>
+                    <span>{{ feedback.created_at|date:"M d, Y" }}</span>
+                </div>
+                <div class="rating-stars" style="margin-bottom: 0.5rem;">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= feedback.rating %}★{% else %}☆{% endif %}
+                    {% endfor %}
+                    <span style="margin-left: 0.5rem; color: #666;">({{ feedback.rating }}/5)</span>
+                </div>
+                <p style="margin-bottom: 0.5rem;"><strong>{{ feedback.subject }}</strong></p>
+                <p>{{ feedback.message }}</p>
+                {% if feedback.areas_of_concern %}
+                <div style="margin-top: 0.75rem;">
+                    <strong>Areas of Concern:</strong>
+                    <ul style="margin: 0.25rem 0; padding-left: 1.2rem;">
+                        {% for area in feedback.areas_of_concern %}
+                        <li>{{ area }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Feedback Statistics -->
+        <div class="feedback-card">
+            <h2 style="margin-bottom: 1rem; color: #333;">Feedback Overview</h2>
+            <div style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Average Rating:</span>
+                    <strong>{{ average_rating|floatformat:1 }}/5.0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Total Feedback:</span>
+                    <strong>{{ feedbacks|length }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Improvement Trends:</span>
+                    <strong style="color: #28a745;">↗ Positive</strong>
+                </div>
+            </div>
+            
+            <h3 style="margin: 1rem 0 0.5rem 0; color: #333;">Most Mentioned Areas</h3>
+            {% for area, count in common_areas.items %}
+            <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;">
+                <span>{{ area }}</span>
+                <span style="background: #e9ecef; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recommended Actions -->
+    <div class="feedback-card">
+        <h2 style="margin-bottom: 1rem; color: #333;">🎯 Recommended Actions</h2>
+        {% if recommended_actions %}
+            {% for action in recommended_actions %}
+            <div class="action-item priority-{{ action.priority }}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h4 style="margin-bottom: 0.5rem;">{{ action.title }}</h4>
+                        <p style="margin-bottom: 0.5rem;">{{ action.description }}</p>
+                        <div style="font-size: 0.875rem; color: #666;">
+                            <span>Priority: <strong style="text-transform: capitalize;">{{ action.priority }}</strong></span>
+                            <span style="margin-left: 1rem;">Estimated Time: {{ action.estimated_time_hours }}h</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="markActionComplete({{ action.id }})">
+                        {% if action.is_completed %}✅ Completed{% else %}Mark Complete{% endif %}
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #666; font-style: italic;">No specific actions recommended at this time.</p>
+        {% endif %}
+    </div>
+
+    <!-- Course Recommendations -->
+    <div class="feedback-card">
+        <h2 style="margin-bottom: 1rem; color: #333;">📚 Recommended Courses</h2>
+        {% if recommended_courses %}
+            {% for course in recommended_courses %}
+            <div class="course-recommendation">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h4 style="margin-bottom: 0.5rem;">{{ course.title }}</h4>
+                        <p style="margin-bottom: 0.5rem;">{{ course.description }}</p>
+                        <div style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">
+                            <span>📚 {{ course.provider }}</span>
+                            <span style="margin-left: 1rem;">⏱️ {{ course.duration_hours }}h</span>
+                            <span style="margin-left: 1rem;">⭐ {{ course.rating }}/5</span>
+                            {% if course.price > 0 %}
+                            <span style="margin-left: 1rem;">💰 ${{ course.price }}</span>
+                            {% else %}
+                            <span style="margin-left: 1rem; color: #28a745;">✨ Free</span>
+                            {% endif %}
+                        </div>
+                        <div style="margin-bottom: 0.5rem;">
+                            <strong>Addresses:</strong> {{ course.feedback_area_addressed }}
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <a href="{{ course.course_url }}" target="_blank" class="btn">View Course</a>
+                        <button class="btn btn-warning" onclick="enrollInCourse({{ course.id }})">Enroll</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #666; font-style: italic;">No specific courses recommended at this time.</p>
+        {% endif %}
+    </div>
+
+    {% else %}
+    <div class="feedback-card">
+        <div class="no-feedback">
+            <h3>No Feedback Available</h3>
+            <p>You haven't received any manager feedback yet. Check back later or contact your manager for updates.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal for AI Assessment -->
+<div id="aiAssessmentModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); align-items:center; justify-content:center;">
+  <div style="background:#fff; padding:2rem; border-radius:8px; max-width:900px; width:90%; position:relative;">
+    <h3>AI Video Assessment</h3>
+    <button id="closeAssessmentBtn" class="btn btn-secondary" style="position:absolute; top:1rem; right:1rem;">&times;</button>
+    
+    <!-- Add CSS for cheating warning animations -->
+    <style>
+      @keyframes pulse {
+        0% { transform: translateX(-50%) scale(0.9); opacity: 0; }
+        50% { transform: translateX(-50%) scale(1.05); }
+        100% { transform: translateX(-50%) scale(1); opacity: 1; }
+      }
+      
+      .assessment-warning {
+        animation: pulse 0.5s ease-in-out;
+      }
+    </style>
+    
+    <!-- Two-column layout: Video left, Questions right -->
+    <div style="display:flex; gap:2rem; margin-top:1rem;">
+      <!-- Video Section -->
+      <div style="flex:1;">
+        <video id="assessmentVideo" width="100%" height="320" autoplay muted style="background:#222; border-radius:8px;"></video>
+        <div id="assessmentStatus" style="margin:1rem 0; color:#007bff; text-align:center;"></div>
+        <button id="startAssessmentBtn" class="btn btn-primary" style="width:100%;">Start Assessment</button>
+      </div>
+      
+      <!-- Questions Section -->
+      <div style="flex:1; padding-left:1rem; border-left:1px solid #eee;">
+        <h4 style="margin-bottom:1rem; color:#333;">Assessment Questions</h4>
+        <div id="assessmentQuestions" style="height:200px; overflow-y:auto; padding:1rem; background:#f8f9fa; border-radius:6px; font-size:0.9rem; line-height:1.5;">
+          <p style="color:#666; text-align:center; margin-top:2rem;">Questions will appear here when assessment starts...</p>
+        </div>
+        <div style="margin-top:1rem; font-size:0.85rem; color:#666;">
+          <strong>Instructions:</strong> Listen carefully to each question and provide clear, detailed answers. Speak naturally and maintain eye contact with the camera.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let speechRecognitionFailures = 0;
+let currentActionId = null;
+let assessmentStream = null;
+let assessmentRecorder = null;
+let recordedChunks = [];
+let assessmentQuestions = [];
+let assessmentAnswers = [];
+let currentQuestionIdx = 0;
+let assessmentTranscript = '';
+
+// Cheating detection variables
+let cheatingFlags = {
+  tabSwitches: 0,
+  windowBlur: 0,
+  noFaceDetected: 0,
+  multipleFaces: 0,
+  lookingAway: 0,
+  suspicious_activity: []
+};
+let faceDetectionInterval = null;
+let isAssessmentActive = false;
+
+function markActionComplete(actionId) {
+  // Instead of marking complete, start AI assessment modal
+  currentActionId = actionId;
+  document.getElementById('aiAssessmentModal').style.display = 'flex';
+  document.getElementById('assessmentStatus').innerText = 'Fetching questions...';
+  document.getElementById('assessmentQuestions').innerHTML = '';
+  document.getElementById('startAssessmentBtn').style.display = '';
+  fetch(`/start-action-assessment/${actionId}/`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        assessmentQuestions = data.questions;
+        document.getElementById('assessmentQuestions').innerHTML = '<ol>' + assessmentQuestions.map(q => `<li>${q}</li>`).join('') + '</ol>';
+        document.getElementById('assessmentStatus').innerText = 'Ready to start.';
+      } else {
+        document.getElementById('assessmentStatus').innerText = 'Error: ' + data.error;
+      }
+    });
+}
+document.getElementById('closeAssessmentBtn').onclick = function() {
+  document.getElementById('aiAssessmentModal').style.display = 'none';
+  if (assessmentStream) {
+    assessmentStream.getTracks().forEach(track => track.stop());
+  }
+};
+document.getElementById('startAssessmentBtn').onclick = async function() {
+  // Start webcam and assessment
+  document.getElementById('assessmentStatus').innerHTML = '🎥 Starting webcam and microphone...';
+  assessmentAnswers = [];
+  currentQuestionIdx = 0;
+  assessmentTranscript = '';
+  
+  try {
+    // Request both video and audio permissions
+    assessmentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    document.getElementById('assessmentVideo').srcObject = assessmentStream;
+    
+    document.getElementById('assessmentStatus').innerHTML = '✅ Camera and microphone ready!<br>🎬 Starting recording...';
+    
+    recordedChunks = [];
+    assessmentRecorder = new MediaRecorder(assessmentStream);
+    assessmentRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    assessmentRecorder.start();
+    
+    // Hide start button and show progress
+    document.getElementById('startAssessmentBtn').style.display = 'none';
+    
+    // Start cheating detection
+    startCheatingDetection();
+    
+    document.getElementById('assessmentStatus').innerHTML = `
+      <strong>🎬 Recording Started</strong><br>
+      <small>Assessment will begin in 3 seconds...</small><br>
+      <div style="color:#e91e63; font-size:0.8rem; margin-top:0.5rem;">
+        ⚠️ <strong>Assessment Monitoring Active</strong><br>
+        • Stay focused on the screen<br>
+        • Keep your face visible to the camera<br>
+        • Do not switch tabs or windows
+      </div>
+    `;
+    
+    setTimeout(() => {
+      document.getElementById('assessmentStatus').innerHTML = '🎤 Starting assessment questions...';
+      askNextQuestion();
+    }, 3000);
+    
+  } catch (e) {
+    console.error('Media access error:', e);
+    document.getElementById('assessmentStatus').innerHTML = `
+      <strong>❌ Media Access Error</strong><br>
+      ${e.message}<br>
+      <small style="color:#666;">Please ensure camera and microphone permissions are granted in your browser.</small><br>
+      <button onclick="location.reload()" class="btn btn-secondary" style="margin-top:0.5rem;">Refresh & Try Again</button>
+    `;
+  }
+};
+async function askNextQuestion() {
+  if (currentQuestionIdx >= assessmentQuestions.length) {
+    finishAssessment();
+    return;
+  }
+  const q = assessmentQuestions[currentQuestionIdx];
+  
+  // Update visual feedback
+  document.getElementById('assessmentStatus').innerHTML = `
+    <strong>Question ${currentQuestionIdx + 1} of ${assessmentQuestions.length}</strong><br>
+    🎤 Speaking question...
+  `;
+  
+  // Highlight current question in the list
+  const questionsList = document.getElementById('assessmentQuestions');
+  questionsList.innerHTML = assessmentQuestions.map((question, idx) => {
+    const isActive = idx === currentQuestionIdx;
+    const isCompleted = idx < currentQuestionIdx;
+    return `<li style="padding:0.5rem; margin-bottom:0.5rem; border-radius:4px; ${
+      isActive ? 'background:#e3f2fd; border-left:4px solid #2196f3; font-weight:bold;' :
+      isCompleted ? 'background:#e8f5e8; border-left:4px solid #4caf50; opacity:0.7;' :
+      'background:#f5f5f5; opacity:0.5;'
+    }">${isCompleted ? '✅ ' : isActive ? '🎤 ' : '⏳ '}${question}</li>`
+  }).join('');
+  
+  // Use TTS to ask question
+  const utter = new SpeechSynthesisUtterance(q);
+  utter.rate = 0.9; // Slightly slower for clarity
+  speechSynthesis.speak(utter);
+  
+  utter.onend = () => {
+    // Start STT for answer
+    document.getElementById('assessmentStatus').innerHTML = `
+      <strong>Question ${currentQuestionIdx + 1} of ${assessmentQuestions.length}</strong><br>
+      🎧 Listening for your answer... (Speak now)
+    `;
+    startSpeechRecognition();
+  };
+}
+function startSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('assessmentStatus').innerHTML = `
+      <strong>⚠️ Speech Recognition Not Available</strong><br>
+      <button onclick="showManualInput()" class="btn btn-primary" style="margin-top:0.5rem;">Type Answer Instead</button>
+    `;
+    return;
+  }
+  
+  // Auto-switch to manual input after 2 consecutive failures
+  if (speechRecognitionFailures >= 2) {
+    document.getElementById('assessmentStatus').innerHTML = `
+      <strong>🔄 Switching to Manual Input</strong><br>
+      <small style="color:#666;">Speech recognition seems to be having issues. Let's continue with typing.</small>
+    `;
+    setTimeout(() => showManualInput(), 1500);
+    return;
+  }
+  
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true; // Show interim results
+  recognition.maxAlternatives = 1;
+  recognition.continuous = false;
+  
+  let finalAnswer = '';
+  let timeout;
+  
+  recognition.start();
+  
+  // Auto-stop after 30 seconds of listening
+  timeout = setTimeout(() => {
+    recognition.stop();
+    if (!finalAnswer) {
+      document.getElementById('assessmentStatus').innerHTML += '<br><span style="color:orange;">⏰ Time limit reached. Moving to next question.</span>';
+      setTimeout(() => {
+        assessmentAnswers.push('No response recorded');
+        assessmentTranscript += `Q${currentQuestionIdx+1}: ${assessmentQuestions[currentQuestionIdx]}\nA: No response recorded\n`;
+        currentQuestionIdx++;
+        askNextQuestion();
+      }, 1500);
+    }
+  }, 30000);
+  
+  recognition.onresult = function(event) {
+    let interimTranscript = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        finalAnswer = event.results[i][0].transcript;
+        clearTimeout(timeout);
+        
+        document.getElementById('assessmentStatus').innerHTML = `
+          <strong>Question ${currentQuestionIdx + 1} of ${assessmentQuestions.length}</strong><br>
+          ✅ Answer recorded: "${finalAnswer}"<br>
+          <span style="color:green;">Moving to next question...</span>
+        `;
+        
+        assessmentAnswers.push(finalAnswer);
+        assessmentTranscript += `Q${currentQuestionIdx+1}: ${assessmentQuestions[currentQuestionIdx]}\nA: ${finalAnswer}\n`;
+        currentQuestionIdx++;
+        
+        setTimeout(() => askNextQuestion(), 2000);
+        return;
+      } else {
+        interimTranscript += event.results[i][0].transcript;
+      }
+    }
+    
+    // Show live transcription
+    if (interimTranscript) {
+      document.getElementById('assessmentStatus').innerHTML = `
+        <strong>Question ${currentQuestionIdx + 1} of ${assessmentQuestions.length}</strong><br>
+        🎧 Listening: <em style="color:#666;">"${interimTranscript}"</em><br>
+        <small>Keep speaking or pause when finished...</small>
+      `;
+    }
+  };
+  
+  recognition.onerror = function(event) {
+    clearTimeout(timeout);
+    speechRecognitionFailures++;
+    console.error('Speech recognition error:', event.error);
+    
+    let errorMessage = '';
+    let suggestion = '';
+    
+    switch(event.error) {
+      case 'no-speech':
+        errorMessage = 'No speech detected';
+        suggestion = 'Make sure your microphone is working and speak clearly. Try again or type your answer.';
+        break;
+      case 'not-allowed':
+        errorMessage = 'Microphone access denied';
+        suggestion = 'Please allow microphone access in your browser settings and refresh the page.';
+        break;
+      case 'network':
+        errorMessage = 'Network error';
+        suggestion = 'Check your internet connection and try again.';
+        break;
+      default:
+        errorMessage = `Speech recognition error: ${event.error}`;
+        suggestion = 'Try speaking again or continue manually.';
+    }
+    
+    // If this is the second failure, suggest manual input more prominently
+    if (speechRecognitionFailures >= 2) {
+      document.getElementById('assessmentStatus').innerHTML = `
+        <strong>⚠️ Multiple Speech Recognition Issues</strong><br>
+        <small style="color:#666;">Let's switch to typing your answers to continue smoothly.</small><br>
+        <div style="margin-top:1rem;">
+          <button onclick="showManualInput()" class="btn btn-success" style="margin-right:0.5rem;">✍️ Type Answer (Recommended)</button>
+          <button onclick="retryQuestion()" class="btn btn-secondary">🎤 Try Voice Once More</button>
+        </div>
+      `;
+    } else {
+      document.getElementById('assessmentStatus').innerHTML = `
+        <strong>⚠️ ${errorMessage}</strong><br>
+        <small style="color:#666;">${suggestion}</small><br>
+        <div style="margin-top:1rem;">
+          <button onclick="retryQuestion()" class="btn btn-primary" style="margin-right:0.5rem;">🎤 Try Again</button>
+          <button onclick="showManualInput()" class="btn btn-success" style="margin-right:0.5rem;">✍️ Type Answer</button>
+          <button onclick="manualAnswerMode()" class="btn btn-secondary">Skip Question</button>
+        </div>
+      `;
+    }
+  };
+  
+  recognition.onend = function() {
+    clearTimeout(timeout);
+    if (!finalAnswer) {
+      // If recognition ended without a final result, try again or skip
+      document.getElementById('assessmentStatus').innerHTML += '<br><span style="color:orange;">Recognition ended. Click to continue manually.</span><br><button onclick="manualAnswerMode()" class="btn btn-secondary" style="margin-top:0.5rem;">Skip Question</button>';
+    }
+  };
+}
+
+function manualAnswerMode() {
+  assessmentAnswers.push('Skipped - manual mode');
+  assessmentTranscript += `Q${currentQuestionIdx+1}: ${assessmentQuestions[currentQuestionIdx]}\nA: Skipped - manual mode\n`;
+  currentQuestionIdx++;
+  askNextQuestion();
+}
+
+function retryQuestion() {
+  document.getElementById('assessmentStatus').innerHTML = `
+    <strong>Question ${currentQuestionIdx + 1} of ${assessmentQuestions.length}</strong><br>
+    🎤 Retrying... Make sure to speak clearly into your microphone.
+  `;
+  setTimeout(() => startSpeechRecognition(), 1000);
+}
+
+function showManualInput() {
+  const currentQuestion = assessmentQuestions[currentQuestionIdx];
+  document.getElementById('assessmentStatus').innerHTML = `
+    <strong>Question ${currentQuestionIdx + 1} of ${assessmentQuestions.length}</strong><br>
+    <div style="background:#f8f9fa; padding:1rem; border-radius:6px; margin:1rem 0;">
+      <strong>Q:</strong> ${currentQuestion}
+    </div>
+    <textarea id="manualAnswer" placeholder="Type your answer here..." 
+              style="width:100%; height:80px; padding:0.5rem; border:1px solid #ddd; border-radius:4px; resize:vertical;"></textarea>
+    <div style="margin-top:0.5rem;">
+      <button onclick="submitManualAnswer()" class="btn btn-primary">Submit Answer</button>
+      <button onclick="startSpeechRecognition()" class="btn btn-secondary" style="margin-left:0.5rem;">🎤 Try Voice Again</button>
+    </div>
+  `;
+  
+  // Focus on textarea
+  setTimeout(() => document.getElementById('manualAnswer').focus(), 100);
+}
+
+function submitManualAnswer() {
+  const answer = document.getElementById('manualAnswer').value.trim();
+  
+  if (!answer) {
+    alert('Please type your answer before submitting.');
+    return;
+  }
+  
+  document.getElementById('assessmentStatus').innerHTML = `
+    <strong>Question ${currentQuestionIdx + 1} of ${assessmentQuestions.length}</strong><br>
+    ✅ Answer recorded: "${answer}"<br>
+    <span style="color:green;">Moving to next question...</span>
+  `;
+  
+  assessmentAnswers.push(answer);
+  assessmentTranscript += `Q${currentQuestionIdx+1}: ${assessmentQuestions[currentQuestionIdx]}\nA: ${answer}\n`;
+  currentQuestionIdx++;
+  
+  setTimeout(() => askNextQuestion(), 2000);
+}
+
+// Add microphone test function
+function testMicrophone() {
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      document.getElementById('assessmentStatus').innerHTML += '<br>✅ Microphone access granted.';
+      stream.getTracks().forEach(track => track.stop());
+    })
+    .catch(err => {
+      document.getElementById('assessmentStatus').innerHTML += '<br>❌ Microphone access failed: ' + err.message;
+    });
+}
+
+// Cheating Detection Functions
+function startCheatingDetection() {
+  isAssessmentActive = true;
+  
+  // Reset cheating flags
+  cheatingFlags = {
+    tabSwitches: 0,
+    windowBlur: 0,
+    noFaceDetected: 0,
+    multipleFaces: 0,
+    lookingAway: 0,
+    suspicious_activity: []
+  };
+  
+  // Monitor tab switching and window focus
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('blur', handleWindowBlur);
+  window.addEventListener('focus', handleWindowFocus);
+  
+  // Disable right-click and common shortcuts
+  document.addEventListener('contextmenu', preventCheating);
+  document.addEventListener('keydown', handleKeyPress);
+  
+  // Start face detection (if available)
+  startFaceDetection();
+  
+  console.log('🔒 Cheating detection started');
+}
+
+function stopCheatingDetection() {
+  isAssessmentActive = false;
+  
+  // Remove event listeners
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  window.removeEventListener('blur', handleWindowBlur);
+  window.removeEventListener('focus', handleWindowFocus);
+  document.removeEventListener('contextmenu', preventCheating);
+  document.removeEventListener('keydown', handleKeyPress);
+  
+  // Stop face detection
+  if (faceDetectionInterval) {
+    clearInterval(faceDetectionInterval);
+    faceDetectionInterval = null;
+  }
+  
+  console.log('🔒 Cheating detection stopped');
+}
+
+function handleVisibilityChange() {
+  if (!isAssessmentActive) return;
+  
+  if (document.hidden) {
+    cheatingFlags.tabSwitches++;
+    cheatingFlags.suspicious_activity.push({
+      type: 'tab_switch',
+      timestamp: new Date().toISOString(),
+      question: currentQuestionIdx + 1
+    });
+    
+    // Show warning
+    showCheatingWarning('Tab switching detected! Please return to the assessment.');
+  }
+}
+
+function handleWindowBlur() {
+  if (!isAssessmentActive) return;
+  
+  cheatingFlags.windowBlur++;
+  cheatingFlags.suspicious_activity.push({
+    type: 'window_blur',
+    timestamp: new Date().toISOString(),
+    question: currentQuestionIdx + 1
+  });
+}
+
+function handleWindowFocus() {
+  if (!isAssessmentActive) return;
+  hideCheatingWarning();
+}
+
+function handleKeyPress(e) {
+  if (!isAssessmentActive) return;
+  
+  // Prevent common cheating shortcuts
+  const blockedKeys = [
+    'F12', // Developer tools
+    'F5',  // Refresh (unless Ctrl+F5)
+    'PrintScreen'
+  ];
+  
+  // Prevent Ctrl+combinations that could be used for cheating
+  if (e.ctrlKey && ['a', 'c', 'v', 'x', 'z', 'y', 'f', 'h', 'r', 't', 'w', 'n'].includes(e.key.toLowerCase())) {
+    if (!(e.key.toLowerCase() === 'r' && e.shiftKey)) { // Allow Ctrl+Shift+R
+      e.preventDefault();
+      cheatingFlags.suspicious_activity.push({
+        type: 'blocked_shortcut',
+        key: `Ctrl+${e.key}`,
+        timestamp: new Date().toISOString(),
+        question: currentQuestionIdx + 1
+      });
+      showCheatingWarning(`Keyboard shortcut blocked: Ctrl+${e.key}`);
+    }
+  }
+  
+  // Block F-keys
+  if (blockedKeys.includes(e.key)) {
+    e.preventDefault();
+    cheatingFlags.suspicious_activity.push({
+      type: 'blocked_key',
+      key: e.key,
+      timestamp: new Date().toISOString(),
+      question: currentQuestionIdx + 1
+    });
+    showCheatingWarning(`Key blocked: ${e.key}`);
+  }
+}
+
+function preventCheating(e) {
+  if (!isAssessmentActive) return;
+  
+  e.preventDefault();
+  cheatingFlags.suspicious_activity.push({
+    type: 'right_click_attempt',
+    timestamp: new Date().toISOString(),
+    question: currentQuestionIdx + 1
+  });
+  showCheatingWarning('Right-click is disabled during assessment');
+}
+
+function startFaceDetection() {
+  // This is a simplified face detection - in production, you'd use a proper face detection library
+  faceDetectionInterval = setInterval(() => {
+    if (!isAssessmentActive) return;
+    
+    // Basic detection using video element (placeholder for actual face detection)
+    const video = document.getElementById('assessmentVideo');
+    if (video && video.videoWidth > 0) {
+      // In a real implementation, you would use libraries like face-api.js or MediaPipe
+      // For now, we'll just check if video is active
+      console.log('📹 Face detection check...');
+      
+      // Simulate basic checks (in real implementation, analyze video frames)
+      // This is where you would integrate actual face detection AI
+    }
+  }, 5000); // Check every 5 seconds
+}
+
+function showCheatingWarning(message) {
+  // Create or update warning overlay
+  let warningDiv = document.getElementById('cheatingWarning');
+  if (!warningDiv) {
+    warningDiv = document.createElement('div');
+    warningDiv.id = 'cheatingWarning';
+    warningDiv.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ff5722;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      z-index: 10000;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      animation: pulse 0.5s ease-in-out;
+    `;
+    document.body.appendChild(warningDiv);
+  }
+  
+  warningDiv.innerHTML = `⚠️ ${message}`;
+  warningDiv.style.display = 'block';
+  
+  // Auto-hide after 3 seconds
+  setTimeout(() => hideCheatingWarning(), 3000);
+}
+
+function hideCheatingWarning() {
+  const warningDiv = document.getElementById('cheatingWarning');
+  if (warningDiv) {
+    warningDiv.style.display = 'none';
+  }
+}
+function finishAssessment() {
+  // Stop cheating detection
+  stopCheatingDetection();
+  
+  assessmentRecorder.stop();
+  assessmentRecorder.onstop = function() {
+    const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+    const formData = new FormData();
+    formData.append('video', videoBlob, 'assessment.webm');
+    formData.append('transcript', assessmentTranscript);
+    formData.append('questions', JSON.stringify(assessmentQuestions));
+    formData.append('answers', JSON.stringify(assessmentAnswers));
+    formData.append('cheating_data', JSON.stringify(cheatingFlags));
+    
+    document.getElementById('assessmentStatus').innerHTML = `
+      <strong>🔄 Uploading and analyzing...</strong><br>
+      <small>Analyzing video for integrity...</small>
+    `;
+    
+    fetch(`/submit-action-assessment/${currentActionId}/`, {
+      method: 'POST',
+      body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        let statusHtml = `
+          <strong>✅ Assessment Complete!</strong><br>
+          <div style="background:#f8f9fa; padding:1rem; border-radius:6px; margin:1rem 0; text-align:left;">
+            <strong>AI Score:</strong> ${data.ai_score}/10<br>
+            <strong>Feedback:</strong> ${data.ai_feedback}
+        `;
+        
+        if (data.cheating_detected) {
+          statusHtml += `<br><div style="color:#e91e63; margin-top:0.5rem;"><strong>⚠️ Integrity Issues Detected:</strong><br>${data.cheating_details}</div>`;
+        } else {
+          statusHtml += `<br><div style="color:#4caf50; margin-top:0.5rem;">✅ Assessment completed with integrity</div>`;
+        }
+        
+        statusHtml += `</div>`;
+        document.getElementById('assessmentStatus').innerHTML = statusHtml;
+        
+        if (data.marked_complete) {
+          setTimeout(() => location.reload(), 4000);
+        }
+      } else {
+        document.getElementById('assessmentStatus').innerHTML = `<strong>❌ Error:</strong> ${data.error}`;
+      }
+    });
+  };
+}
+</script>
+{% endblock %}

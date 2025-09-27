@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <title>Sign Up</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #f4f4f4; 
+            margin: 0; 
+        }
         .header {
             width: 100%;
             background: #fff;
@@ -28,13 +32,14 @@
         }
         .container {
             max-width: 1200px;
-            margin: 40px auto;
+            margin: 20px auto;
             background: #fff;
             padding: 0;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: row;
+            min-height: 600px;
         }
         .left {
             flex: 1;
@@ -44,24 +49,114 @@
             justify-content: center;
             padding: 0;
             border-radius: 8px 0 0 8px;
+            height: 100%;
         }
         .right {
             flex: 1;
-            padding: 40px 30px;
+            padding: 30px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            height: 100%;
+            overflow-y: visible;
         }
-        h2 { text-align: center; }
-        form { margin-bottom: 20px; }
-        .error { color: red; text-align: center; }
-        input[type="text"], input[type="password"], input[type="email"] {
-            width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px;
+        h2 { text-align: center; margin-bottom: 20px; color: #333; }
+        .form-group {
+            margin-bottom: 20px;
         }
-        button { width: 100%; padding: 10px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .required::after {
+            content: " *";
+            color: red;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+        }
+        .phone-group {
+            display: flex;
+            gap: 10px;
+        }
+        .country-code-select {
+            flex: 0 0 120px;
+        }
+        .mobile-input {
+            flex: 1;
+        }
+        .password-strength {
+            margin-top: 5px;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: none;
+        }
+        .strength-weak { background: #ffe6e6; color: #d32f2f; }
+        .strength-medium { background: #fff3e0; color: #f57c00; }
+        .strength-strong { background: #e8f5e8; color: #388e3c; }
+        .username-status {
+            margin-top: 5px;
+            font-size: 12px;
+            padding: 5px;
+            border-radius: 3px;
+            display: none;
+        }
+        .username-available {
+            background: #e8f5e8;
+            color: #388e3c;
+        }
+        .username-taken {
+            background: #ffe6e6;
+            color: #d32f2f;
+        }
+        .error {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .help-text {
+            font-size: 11px;
+            color: #666;
+            margin-top: 3px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
         button:hover { background: #0056b3; }
-        .back-link { text-align: right; margin-top: 8px; }
-        .back-link a { font-size: 0.95em; color: #007bff; text-decoration: none; }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .back-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .back-link a {
+            font-size: 0.95em;
+            color: #007bff;
+            text-decoration: none;
+        }
         .footer {
             width: 100%;
             background: #fff;
@@ -69,8 +164,25 @@
             padding: 16px 0;
             color: #888;
             font-size: 1em;
-            margin-top: 32px;
             box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+            margin-top: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 5px 0 0 0;
+        }
+        .errorlist li {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-bottom: 3px;
         }
     </style>
 </head>
@@ -91,24 +203,224 @@
     <span class="header-title">NextGenHR</span>
 </div>
 <div class="container">
-    <div class="left" style="background: #e9ecef; display: flex; align-items: center; justify-content: center; padding: 0;">
-        <img src="/static/images/login-illustration.png" alt="Sign Up Illustration" style="max-width:100%; max-height:550px; width:100%; height:100%; object-fit:cover; border-radius:8px 0 0 8px;">
+    <div class="left">
+        <img src="/static/images/login-illustration.png" alt="Sign Up Illustration" style="width:100%; height:100%; object-fit:cover; border-radius:8px 0 0 8px;">
     </div>
-    <div class="right" style="padding: 40px 30px; display: flex; flex-direction: column; justify-content: center;">
-        <h2>Sign Up</h2>
-        {% if signup_error %}<div class="error">{{ signup_error }}</div>{% endif %}
-        <form method="post">
+    <div class="right">
+        <h2>Create Your Account</h2>
+        {% if signup_error %}
+            <div style="background: #ffe6e6; color: #d32f2f; padding: 10px; border-radius: 4px; margin-bottom: 20px; text-align: center;">
+                {{ signup_error }}
+            </div>
+        {% endif %}
+        
+        <form method="post" enctype="multipart/form-data" id="signupForm">
             {% csrf_token %}
-            {{ signup_form.as_p }}
-            <button type="submit" name="signup">Sign Up</button>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ signup_form.first_name.id_for_label }}" class="required">First Name</label>
+                    {{ signup_form.first_name }}
+                    {{ signup_form.first_name.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ signup_form.last_name.id_for_label }}" class="required">Last Name</label>
+                    {{ signup_form.last_name }}
+                    {{ signup_form.last_name.errors }}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ signup_form.username.id_for_label }}" class="required">Username</label>
+                {{ signup_form.username }}
+                <div id="username-status" class="username-status"></div>
+                {{ signup_form.username.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ signup_form.email.id_for_label }}" class="required">Email Address</label>
+                {{ signup_form.email }}
+                {{ signup_form.email.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label class="required">Mobile Number</label>
+                <div class="phone-group">
+                    {{ signup_form.country_code }}
+                    <input type="text" name="mobile_number" class="form-control mobile-input" placeholder="Enter 10-digit mobile number" required maxlength="10" pattern="[0-9]{10}" id="{{ signup_form.mobile_number.id_for_label }}">
+                </div>
+                <div class="help-text">Enter exactly 10 digits</div>
+                {{ signup_form.mobile_number.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ signup_form.resume.id_for_label }}" class="required">Resume</label>
+                {{ signup_form.resume }}
+                <div class="help-text">{{ signup_form.resume.help_text }}</div>
+                {{ signup_form.resume.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ signup_form.password.id_for_label }}" class="required">Password</label>
+                {{ signup_form.password }}
+                <div id="password-strength" class="password-strength"></div>
+                <div class="help-text">{{ signup_form.password.help_text }}</div>
+                {{ signup_form.password.errors }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ signup_form.confirm_password.id_for_label }}" class="required">Confirm Password</label>
+                {{ signup_form.confirm_password }}
+                {{ signup_form.confirm_password.errors }}
+            </div>
+            
+            <button type="submit" name="signup" id="submitBtn">Create Account</button>
         </form>
+        
         <div class="back-link">
-            <a href="/">Back to Sign In</a>
+            <a href="/">Already have an account? Sign In</a>
         </div>
     </div>
 </div>
 <div class="footer">
     &copy; {{ year|default:2025 }} NextGenHR. All rights reserved.
 </div>
+
+<script>
+    // Password strength indicator
+    const passwordField = document.getElementById('id_password');
+    const strengthIndicator = document.getElementById('password-strength');
+    
+    passwordField.addEventListener('input', function() {
+        const password = this.value;
+        const strength = calculatePasswordStrength(password);
+        updatePasswordStrength(strength);
+    });
+    
+    function calculatePasswordStrength(password) {
+        let score = 0;
+        const checks = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            numbers: /\d/.test(password),
+            special: /[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\?]/.test(password)
+        };
+        
+        Object.values(checks).forEach(check => {
+            if (check) score++;
+        });
+        
+        return { score, checks };
+    }
+    
+    function updatePasswordStrength(strength) {
+        const { score, checks } = strength;
+        let className = '';
+        let message = '';
+        
+        if (score < 3) {
+            className = 'strength-weak';
+            message = 'Weak password';
+        } else if (score < 5) {
+            className = 'strength-medium';
+            message = 'Medium password';
+        } else {
+            className = 'strength-strong';
+            message = 'Strong password';
+        }
+        
+        strengthIndicator.className = `password-strength ${className}`;
+        strengthIndicator.textContent = message;
+        strengthIndicator.style.display = 'block';
+    }
+    
+    // Username availability checker
+    const usernameField = document.getElementById('id_username');
+    const usernameStatus = document.getElementById('username-status');
+    let usernameTimeout;
+    
+    usernameField.addEventListener('input', function() {
+        const username = this.value.trim();
+        
+        clearTimeout(usernameTimeout);
+        
+        if (username.length >= 3) {
+            usernameTimeout = setTimeout(() => {
+                checkUsernameAvailability(username);
+            }, 500);
+        } else {
+            usernameStatus.style.display = 'none';
+        }
+    });
+    
+    // Mobile number validation
+    const mobileField = document.querySelector('input[name="mobile_number"]');
+    if (mobileField) {
+        mobileField.addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            let value = e.target.value.replace(/\D/g, '');
+            
+            // Limit to 10 digits
+            if (value.length > 10) {
+                value = value.slice(0, 10);
+            }
+            
+            e.target.value = value;
+        });
+        
+        mobileField.addEventListener('keypress', function(e) {
+            // Only allow digits
+            if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    function checkUsernameAvailability(username) {
+        fetch(`/check-username/?username=${encodeURIComponent(username)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    usernameStatus.className = 'username-status username-available';
+                    usernameStatus.textContent = '✓ Username is available';
+                } else {
+                    usernameStatus.className = 'username-status username-taken';
+                    usernameStatus.textContent = '✗ Username is already taken';
+                }
+                usernameStatus.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error checking username:', error);
+            });
+    }
+    
+    // Form validation
+    document.getElementById('signupForm').addEventListener('submit', function(e) {
+        const password = document.getElementById('id_password').value;
+        const confirmPassword = document.getElementById('id_confirm_password').value;
+        const mobileNumber = document.querySelector('input[name="mobile_number"]').value;
+        
+        // Validate mobile number
+        if (!/^\d{10}$/.test(mobileNumber)) {
+            e.preventDefault();
+            alert('Mobile number must be exactly 10 digits!');
+            return false;
+        }
+        
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            alert('Passwords do not match!');
+            return false;
+        }
+        
+        const strength = calculatePasswordStrength(password);
+        if (strength.score < 5) {
+            e.preventDefault();
+            alert('Please create a stronger password with all required criteria.');
+            return false;
+        }
+    });
+</script>
 </body>
 </html>

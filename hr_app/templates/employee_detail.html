@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% block title %}{{ employee.first_name }} {{ employee.last_name }} - Employee Details{% endblock %}
+{% block extra_head %}
+<style>
+.employee-detail { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+.back-btn { display: inline-flex; align-items: center; gap: 0.5rem; color: #007bff; text-decoration: none; margin-bottom: 2rem; }
+.back-btn:hover { color: #0056b3; }
+.employee-header { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+.employee-avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #007bff, #0056b3); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: bold; }
+.employee-info { display: flex; align-items: center; gap: 2rem; margin-bottom: 1.5rem; }
+.employee-meta { flex: 1; }
+.employee-name { font-size: 2rem; font-weight: bold; color: #333; margin: 0; }
+.employee-role { color: #666; font-size: 1.1rem; margin: 0.5rem 0; }
+.employee-contact { display: flex; gap: 2rem; color: #666; }
+.details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+.detail-card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.card-title { font-size: 1.25rem; font-weight: bold; color: #333; margin-bottom: 1.5rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 0.5rem; }
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f0f0f0; }
+.info-row:last-child { border-bottom: none; }
+.info-label { font-weight: 600; color: #555; }
+.info-value { color: #333; }
+.status-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+.status-active { background: #d4edda; color: #155724; }
+.status-inactive { background: #f8d7da; color: #721c24; }
+.status-processing { background: #fff3cd; color: #856404; }
+.skills-container { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.skill-tag { background: #e3f2fd; color: #1976d2; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.875rem; }
+.progress-section { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+.progress-item { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #007bff; }
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.progress-title { font-weight: 600; color: #333; }
+.progress-bar { width: 100%; height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: #007bff; transition: width 0.3s ease; }
+.action-buttons { display: flex; gap: 1rem; margin-top: 2rem; }
+.btn { padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 1rem; transition: background 0.3s; }
+.btn-primary { background: #007bff; color: white; }
+.btn-primary:hover { background: #0056b3; }
+.btn-success { background: #28a745; color: white; }
+.btn-success:hover { background: #218838; }
+.btn-warning { background: #ffc107; color: #212529; }
+.btn-warning:hover { background: #e0a800; }
+.full-width { grid-column: 1 / -1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="employee-detail">
+    <a href="{% url 'hr_admin_dashboard' %}" class="back-btn">
+        ← Back to Employee Directory
+    </a>
+
+    <!-- Employee Header -->
+    <div class="employee-header">
+        <div class="employee-info">
+            <div class="employee-avatar">
+                {{ employee.first_name.0 }}{{ employee.last_name.0 }}
+            </div>
+            <div class="employee-meta">
+                <h1 class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</h1>
+                <p class="employee-role">{{ employee.userprofile.user_type|default:"Candidate"|capfirst }} - {{ employee.userprofile.country_code|default:"Global" }}</p>
+                <div class="employee-contact">
+                    <span>📧 {{ employee.email }}</span>
+                    {% if employee.userprofile.mobile_number %}
+                    <span>📱 {{ employee.userprofile.mobile_number }}</span>
+                    {% endif %}
+                    <span>📅 Joined {{ employee.date_joined|date:"M d, Y" }}</span>
+                    <span>🕐 Last Login: {{ employee.last_login|date:"M d, Y H:i"|default:"Never" }}</span>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 1rem;">
+                <!-- Status Badge -->
+                <div>
+                    {% if candidate_profile.resume_processed %}
+                        <span class="status-badge status-active">Profile Complete</span>
+                    {% elif candidate_profile %}
+                        <span class="status-badge status-processing">Processing</span>
+                    {% else %}
+                        <span class="status-badge status-inactive">No Profile</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Prominent Feedback Button -->
+                <a href="{% url 'admin_employee_feedback' employee.id %}" class="btn btn-success" style="font-weight: 600;">
+                    💬 Manage Feedback
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Grid -->
+    <div class="details-grid">
+        <!-- Personal Information -->
+        <div class="detail-card">
+            <h3 class="card-title">👤 Personal Information</h3>
+            <div class="info-row">
+                <span class="info-label">Full Name</span>
+                <span class="info-value">{{ employee.first_name }} {{ employee.last_name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span class="info-value">{{ employee.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phone</span>
+                <span class="info-value">{{ employee.userprofile.mobile_number|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Country</span>
+                <span class="info-value">{{ employee.userprofile.country_code|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Role</span>
+                <span class="info-value">{{ employee.userprofile.user_type|default:"candidate"|capfirst }}</span>
+            </div>
+        </div>
+
+        <!-- Account Status -->
+        <div class="detail-card">
+            <h3 class="card-title">📊 Account Status</h3>
+            <div class="info-row">
+                <span class="info-label">Account Status</span>
+                <span class="info-value">
+                    {% if employee.is_active %}
+                        <span class="status-badge status-active">Active</span>
+                    {% else %}
+                        <span class="status-badge status-inactive">Inactive</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Date Joined</span>
+                <span class="info-value">{{ employee.date_joined|date:"M d, Y" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Last Login</span>
+                <span class="info-value">{{ employee.last_login|date:"M d, Y H:i"|default:"Never" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Profile Status</span>
+                <span class="info-value">
+                    {% if candidate_profile.resume_processed %}
+                        <span class="status-badge status-active">Completed</span>
+                    {% elif candidate_profile %}
+                        <span class="status-badge status-processing">Processing</span>
+                    {% else %}
+                        <span class="status-badge status-inactive">Not Started</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        {% if candidate_profile %}
+        <!-- Professional Information -->
+        <div class="detail-card">
+            <h3 class="card-title">💼 Professional Profile</h3>
+            <div class="info-row">
+                <span class="info-label">Current Role</span>
+                <span class="info-value">{{ candidate_profile.current_role|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Experience Level</span>
+                <span class="info-value">{{ candidate_profile.get_experience_level_display|default:"—" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Total Experience</span>
+                <span class="info-value">{{ candidate_profile.experience_years|default:"0" }} years</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Resume Score</span>
+                <span class="info-value">{{ candidate_profile.resume_score|default:"—" }}/100</span>
+            </div>
+            {% if candidate_profile.resume_summary %}
+            <div class="info-row">
+                <span class="info-label">Summary</span>
+                <span class="info-value" style="max-width: 300px; text-align: right;">{{ candidate_profile.resume_summary|truncatewords:20 }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Skills & Expertise -->
+        <div class="detail-card">
+            <h3 class="card-title">🛠️ Skills & Expertise</h3>
+            {% if candidate_profile.primary_skills %}
+            <div class="info-row">
+                <span class="info-label">Primary Skills</span>
+                <div class="skills-container">
+                    {% for skill in candidate_profile.primary_skills %}
+                    <span class="skill-tag">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if candidate_profile.secondary_skills %}
+            <div class="info-row">
+                <span class="info-label">Secondary Skills</span>
+                <div class="skills-container">
+                    {% for skill in candidate_profile.secondary_skills %}
+                    <span class="skill-tag" style="background: #f3e5f5; color: #7b1fa2;">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if candidate_profile.strengths %}
+            <div class="info-row">
+                <span class="info-label">Strengths</span>
+                <div style="max-width: 300px;">
+                    <ul style="margin: 0; padding-left: 1rem;">
+                        {% for strength in candidate_profile.strengths %}
+                        <li>{{ strength }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Development Progress -->
+    {% if development_plans %}
+    <div class="progress-section">
+        <h3 class="card-title">📚 Learning Progress</h3>
+        {% for plan in development_plans %}
+        <div class="progress-item">
+            <div class="progress-header">
+                <span class="progress-title">{{ plan.course.title }}</span>
+                <span class="status-badge status-{{ plan.status }}">{{ plan.get_status_display }}</span>
+            </div>
+            <p style="margin: 0.5rem 0; color: #666;">{{ plan.course.description|truncatewords:15 }}</p>
+            {% if plan.status == 'in_progress' or plan.status == 'completed' %}
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ plan.progress_percentage }}%;"></div>
+            </div>
+            <small style="color: #666;">Progress: {{ plan.progress_percentage }}%</small>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+    <a href="{% url 'hr_admin_dashboard' %}" class="btn btn-primary">← Back to Directory</a>
+        {% if candidate_profile %}
+        <button onclick="reprocessProfile({{ employee.id }})" class="btn btn-warning">🔄 Reprocess Profile</button>
+        <button onclick="assignCourse({{ employee.id }})" class="btn btn-success">📚 Assign Course</button>
+        {% endif %}
+        <button onclick="sendMessage({{ employee.id }})" class="btn btn-primary">📧 Send Message</button>
+    </div>
+</div>
+
+<script>
+function reprocessProfile(employeeId) {
+    if (confirm('Are you sure you want to reprocess this employee\'s profile?')) {
+        // TODO: Implement reprocess functionality
+        alert('Profile reprocessing initiated.');
+    }
+}
+
+function assignCourse(employeeId) {
+    // TODO: Open course assignment modal
+    alert('Course assignment feature coming soon.');
+}
+
+function sendMessage(employeeId) {
+    // TODO: Open message modal
+    alert('Messaging feature coming soon.');
+}
+
+
+</script>
+{% endblock %}
