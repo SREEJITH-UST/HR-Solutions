@@ -1,0 +1,617 @@
+{% extends 'base.html' %}
+{% block title %}Employee Details - {{ employee.get_full_name|default:employee.username }} - NextGenHR{% endblock %}
+
+{% block extra_head %}
+<style>
+    .employee-detail {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        min-height: 100vh;
+    }
+
+    .detail-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .header-info h1 {
+        margin: 0;
+        font-size: 2rem;
+    }
+
+    .header-info p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+    }
+
+    .back-btn {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        margin-left: auto;
+    }
+
+    .back-btn:hover {
+        background: rgba(255,255,255,0.3);
+        color: white;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .detail-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f8f9fa;
+    }
+
+    .card-header h2 {
+        margin: 0;
+        color: #2d3748;
+        font-size: 1.3rem;
+    }
+
+    .card-header i {
+        color: #667eea;
+        font-size: 1.2rem;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #4a5568;
+    }
+
+    .info-value {
+        color: #2d3748;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-processing {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-pending {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .wide-card {
+        grid-column: 1 / -1;
+    }
+
+    .skills-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .skill-tag {
+        background: #e2e8f0;
+        color: #2d3748;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+    }
+
+    .no-data {
+        text-align: center;
+        color: #9ca3af;
+        font-style: italic;
+        padding: 2rem;
+    }
+
+    .feedback-item {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border-left: 4px solid #667eea;
+    }
+
+    .feedback-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .feedback-manager {
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    .feedback-date {
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+
+    .course-item {
+        background: #f0f4f8;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border-left: 4px solid #48bb78;
+    }
+
+    .course-title {
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.25rem;
+    }
+
+    .course-provider {
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .detail-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .back-btn {
+            margin: 1rem 0 0 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="employee-detail">
+    <div class="detail-header">
+        <div class="profile-avatar">
+            {{ employee.first_name.0|default:employee.username.0|upper }}{{ employee.last_name.0|default:""|upper }}
+        </div>
+        <div class="header-info">
+            <h1>{{ employee.get_full_name|default:employee.username }}</h1>
+            <p>
+                <i class="fas fa-envelope"></i> {{ employee.email }} |
+                <i class="fas fa-user-tag"></i> 
+                {% if employee.userprofile %}
+                    {{ employee.userprofile.get_user_type_display }}
+                {% else %}
+                    User
+                {% endif %}
+            </p>
+        </div>
+        <a href="{% url 'admin_dashboard' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="detail-grid">
+        <!-- Basic Information -->
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-user"></i>
+                <h2>Basic Information</h2>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Full Name:</span>
+                <span class="info-value">{{ employee.get_full_name|default:"Not provided" }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Username:</span>
+                <span class="info-value">{{ employee.username }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ employee.email }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Date Joined:</span>
+                <span class="info-value">{{ employee.date_joined|date:"F d, Y" }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Last Login:</span>
+                <span class="info-value">
+                    {% if employee.last_login %}
+                        {{ employee.last_login|date:"F d, Y H:i" }}
+                    {% else %}
+                        Never
+                    {% endif %}
+                </span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="info-value">
+                    {% if employee.is_active %}
+                        <span class="status-badge status-active">Active</span>
+                    {% else %}
+                        <span class="status-badge status-pending">Inactive</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <!-- Profile Information -->
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-id-card"></i>
+                <h2>Profile Details</h2>
+            </div>
+            
+            {% if employee.userprofile %}
+                <div class="info-row">
+                    <span class="info-label">User Type:</span>
+                    <span class="info-value">{{ employee.userprofile.get_user_type_display }}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Mobile Number:</span>
+                    <span class="info-value">
+                        {% if employee.userprofile.mobile_number %}
+                            {{ employee.userprofile.country_code }} {{ employee.userprofile.mobile_number }}
+                        {% else %}
+                            Not provided
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Resume:</span>
+                    <span class="info-value">
+                        {% if employee.userprofile.resume %}
+                            <a href="{{ employee.userprofile.resume.url }}" target="_blank" class="text-blue-600">
+                                <i class="fas fa-file-pdf"></i> View Resume
+                            </a>
+                        {% else %}
+                            Not uploaded
+                        {% endif %}
+                    </span>
+                </div>
+            {% else %}
+                <div class="no-data">No profile information available</div>
+            {% endif %}
+        </div>
+
+        <!-- Candidate Profile Information -->
+        {% if candidate_profile %}
+        <div class="detail-card wide-card">
+            <div class="card-header">
+                <i class="fas fa-briefcase"></i>
+                <h2>Professional Profile</h2>
+            </div>
+            
+            <div class="detail-grid" style="margin-bottom: 0;">
+                <div>
+                    <div class="info-row">
+                        <span class="info-label">Current Role:</span>
+                        <span class="info-value">{{ candidate_profile.current_role|default:"Not specified" }}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Experience Level:</span>
+                        <span class="info-value">{{ candidate_profile.get_experience_level_display|default:"Not specified" }}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Resume Status:</span>
+                        <span class="info-value">
+                            {% if candidate_profile.resume_processed %}
+                                <span class="status-badge status-active">Processed</span>
+                            {% else %}
+                                <span class="status-badge status-processing">Processing</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="info-row">
+                        <span class="info-label">Profile Created:</span>
+                        <span class="info-value">{{ candidate_profile.created_at|date:"F d, Y" }}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Last Updated:</span>
+                        <span class="info-value">{{ candidate_profile.updated_at|date:"F d, Y H:i" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Skills Section -->
+            {% if candidate_profile.primary_skills %}
+            <div style="margin-top: 1.5rem;">
+                <h4 style="color: #2d3748; margin-bottom: 0.5rem;">Primary Skills:</h4>
+                <div class="skills-list">
+                    {% for skill in candidate_profile.primary_skills %}
+                        <span class="skill-tag">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if candidate_profile.secondary_skills %}
+            <div style="margin-top: 1rem;">
+                <h4 style="color: #2d3748; margin-bottom: 0.5rem;">Secondary Skills:</h4>
+                <div class="skills-list">
+                    {% for skill in candidate_profile.secondary_skills %}
+                        <span class="skill-tag">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Development Plans -->
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-graduation-cap"></i>
+                <h2>Development Plans</h2>
+            </div>
+            
+            {% if development_plans %}
+                {% for plan in development_plans %}
+                <div class="course-item">
+                    <div class="course-title">{{ plan.course.title }}</div>
+                    <div class="course-provider">{{ plan.course.provider|title }} • {{ plan.get_priority_level_display }}</div>
+                    <div style="margin-top: 0.5rem; color: #6b7280; font-size: 0.9rem;">
+                        <i class="fas fa-calendar"></i> Assigned: {{ plan.created_at|date:"M d, Y" }}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if development_plans|length == 5 %}
+                <div style="text-align: center; margin-top: 1rem;">
+                    <small style="color: #6b7280;">Showing 5 most recent plans</small>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="no-data">No development plans assigned yet</div>
+            {% endif %}
+        </div>
+
+        <!-- Feedback History -->
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-comments"></i>
+                <h2>Feedback History</h2>
+            </div>
+            
+            {% if feedback_history %}
+                {% for feedback in feedback_history %}
+                <div class="feedback-item">
+                    <div class="feedback-header">
+                        <span class="feedback-manager">
+                            <i class="fas fa-user"></i> {{ feedback.manager.get_full_name|default:feedback.manager.username }}
+                        </span>
+                        <span class="feedback-date">{{ feedback.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <div style="color: #4a5568;">{{ feedback.feedback_text|truncatewords:20 }}</div>
+                    {% if feedback.performance_rating %}
+                    <div style="margin-top: 0.5rem;">
+                        <small style="color: #6b7280;">Rating: {{ feedback.performance_rating }}/5</small>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">No feedback received yet</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="detail-card" style="text-align: center; margin-top: 2rem;">
+        <div class="card-header">
+            <i class="fas fa-cogs"></i>
+            <h2>Admin Actions</h2>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <button onclick="generateDevelopmentPlan({{ employee.id }})" class="btn btn-primary">
+                <i class="fas fa-lightbulb"></i> Generate Development Plan
+            </button>
+            
+            <button onclick="sendCoursesEmail({{ employee.id }})" class="btn btn-success">
+                <i class="fas fa-envelope"></i> Send Course Recommendations
+            </button>
+            
+            <button onclick="showFeedbackModal({{ employee.id }})" class="btn btn-info">
+                <i class="fas fa-comment"></i> Provide Feedback
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add some basic button styles -->
+<style>
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5a67d8;
+}
+
+.btn-success {
+    background: #48bb78;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #38a169;
+}
+
+.btn-info {
+    background: #4299e1;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #3182ce;
+}
+</style>
+
+<script>
+function generateDevelopmentPlan(employeeId) {
+    if (confirm('Generate a new development plan for this employee?')) {
+        fetch('/generate-development-plan/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ employee_id: employeeId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Development plan generated successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error generating development plan: ' + error);
+        });
+    }
+}
+
+function sendCoursesEmail(employeeId) {
+    if (confirm('Send course recommendations to this employee\'s email?')) {
+        fetch('/send-courses-email/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ employee_id: employeeId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Course recommendations sent successfully!');
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error sending courses: ' + error);
+        });
+    }
+}
+
+function showFeedbackModal(employeeId) {
+    // This could open a modal for feedback submission
+    // For now, redirect to a feedback page or show a simple prompt
+    const feedback = prompt('Enter your feedback for this employee:');
+    if (feedback && feedback.trim()) {
+        fetch(`/hr-admin/employee/${employeeId}/feedback/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ 
+                feedback_text: feedback,
+                performance_rating: 4 // Default rating, could be made dynamic
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Feedback submitted successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error submitting feedback: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

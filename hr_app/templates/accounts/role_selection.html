@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Your Role - NextGenHR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .role-selection-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .welcome-header {
+            margin-bottom: 2rem;
+        }
+        
+        .welcome-header h1 {
+            color: #2d3748;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-header .greeting {
+            color: #4a5568;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .welcome-header p {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        .role-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .role-option {
+            position: relative;
+            border: 3px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .role-option:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+        
+        .role-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+        
+        .role-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .role-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .role-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .role-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .role-option.selected .role-description {
+            opacity: 0.9;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 3rem;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 2rem;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+        
+        .submit-btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            border: 1px solid #fc8181;
+        }
+        
+        @media (max-width: 768px) {
+            .role-selection-container {
+                padding: 2rem;
+            }
+            
+            .role-options {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .role-option {
+                padding: 1.5rem;
+            }
+            
+            .role-icon {
+                font-size: 2.5rem;
+            }
+            
+            .welcome-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .welcome-header .greeting {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="role-selection-container">
+        <div class="welcome-header">
+            <h1>Welcome to NextGenHR!</h1>
+            <div class="greeting">Greetings, {{ user.first_name|default:user.username }}! 🎉</div>
+            <p>Your account has been created successfully. Please select your role to continue to the appropriate dashboard.</p>
+        </div>
+        
+        {% if error_message %}
+        <div class="error-message">
+            {{ error_message }}
+        </div>
+        {% endif %}
+        
+        <form method="post" id="roleForm">
+            {% csrf_token %}
+            
+            <div class="role-options">
+                <label class="role-option" for="candidate">
+                    <input type="radio" name="role" value="candidate" id="candidate" required>
+                    <span class="role-icon">👤</span>
+                    <div class="role-title">Candidate</div>
+                    <div class="role-description">
+                        Access your personalized dashboard, track your applications, 
+                        view course recommendations, and manage your profile.
+                    </div>
+                </label>
+                
+                <label class="role-option" for="admin">
+                    <input type="radio" name="role" value="admin" id="admin" required>
+                    <span class="role-icon">👨‍💼</span>
+                    <div class="role-title">Admin</div>
+                    <div class="role-description">
+                        Manage candidates, review applications, create course 
+                        recommendations, and oversee the entire hiring process.
+                    </div>
+                </label>
+            </div>
+            
+            <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                Continue to Dashboard →
+            </button>
+        </form>
+    </div>
+    
+    <script>
+        // Handle role selection
+        const roleOptions = document.querySelectorAll('input[name="role"]');
+        const submitBtn = document.getElementById('submitBtn');
+        const roleLabels = document.querySelectorAll('.role-option');
+        
+        roleOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                // Remove selected class from all options
+                roleLabels.forEach(label => label.classList.remove('selected'));
+                
+                // Add selected class to the selected option's label
+                if (this.checked) {
+                    this.closest('.role-option').classList.add('selected');
+                    submitBtn.disabled = false;
+                }
+            });
+        });
+        
+        // Handle form submission
+        document.getElementById('roleForm').addEventListener('submit', function(e) {
+            const selectedRole = document.querySelector('input[name="role"]:checked');
+            if (!selectedRole) {
+                e.preventDefault();
+                alert('Please select a role to continue.');
+            } else {
+                // Show loading state
+                submitBtn.textContent = 'Setting up your dashboard...';
+                submitBtn.disabled = true;
+            }
+        });
+        
+        // Add click animation
+        roleLabels.forEach(label => {
+            label.addEventListener('click', function() {
+                // Small animation on click
+                this.style.transform = 'translateY(-2px) scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = this.classList.contains('selected') ? 'translateY(-5px)' : '';
+                }, 150);
+            });
+        });
+    </script>
+</body>
+</html>

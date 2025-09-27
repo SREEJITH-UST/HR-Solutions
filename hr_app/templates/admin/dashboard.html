@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard - NextGenHR{% endblock %}
+{% block extra_head %}
+<style>
+.admin-dashboard { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+.page-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+.stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+.stat-number { font-size: 2.5rem; font-weight: bold; color: #007bff; }
+.stat-label { color: #666; font-size: 0.9rem; margin-top: 0.5rem; }
+.employees-section { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.search-bar { display: flex; gap: 1rem; margin-bottom: 2rem; align-items: center; }
+.search-input { flex: 1; padding: 0.75rem 1rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+.filter-select { padding: 0.75rem 1rem; border: 1px solid #ddd; border-radius: 6px; background: white; }
+.employee-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.employee-table th { background: #f8f9fa; padding: 1rem; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; }
+.employee-table td { padding: 1rem; border-bottom: 1px solid #dee2e6; }
+.employee-row { cursor: pointer; transition: background 0.2s; }
+.employee-row:hover { background: #f8f9fa; }
+.status-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+.status-active { background: #d4edda; color: #155724; }
+.status-inactive { background: #f8d7da; color: #721c24; }
+.status-processing { background: #fff3cd; color: #856404; }
+.btn-view { background: #007bff; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 0.875rem; }
+.btn-view:hover { background: #0056b3; }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem; }
+.page-btn { padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer; text-decoration: none; color: #333; }
+.page-btn:hover { background: #f8f9fa; }
+.page-btn.active { background: #007bff; color: white; border-color: #007bff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="page-header">
+        <h1 style="margin: 0; font-size: 2rem;">👨‍💼 Admin Dashboard</h1>
+        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Manage employees and view their profiles</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_employees }}</div>
+            <div class="stat-label">Total Employees</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ active_employees }}</div>
+            <div class="stat-label">Active Employees</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ completed_profiles }}</div>
+            <div class="stat-label">Completed Profiles</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ pending_processing }}</div>
+            <div class="stat-label">Pending Processing</div>
+        </div>
+    </div>
+
+    <!-- Employee Management Section -->
+    <div class="employees-section">
+        <h2 style="margin-bottom: 1.5rem; color: #333;">📋 Employee Directory</h2>
+        
+        <!-- Search and Filter Bar -->
+        <div class="search-bar">
+            <input type="text" class="search-input" placeholder="Search employees by name, email, or role..." id="searchInput">
+            <select class="filter-select" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="processing">Processing</option>
+            </select>
+            <select class="filter-select" id="roleFilter">
+                <option value="">All Roles</option>
+                <option value="candidate">Candidate</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+
+        <!-- Employee Table -->
+        <table class="employee-table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Role</th>
+                    <th>Country</th>
+                    <th>Status</th>
+                    <th>Last Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="employeeTableBody">
+                {% for employee in employees %}
+                <tr class="employee-row" data-employee-id="{{ employee.id }}">
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #007bff, #0056b3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                {{ employee.first_name.0 }}{{ employee.last_name.0 }}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: #333;">{{ employee.first_name }} {{ employee.last_name }}</div>
+                                <div style="font-size: 0.875rem; color: #666;">{{ employee.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ employee.userprofile.user_type|default:"Candidate"|capfirst }}</td>
+                    <td>{{ employee.userprofile.country_code|default:"—" }}</td>
+                    <td>
+                        {% if employee.userprofile.candidateprofile.resume_processed %}
+                            <span class="status-badge status-active">Active</span>
+                        {% elif employee.userprofile.candidateprofile %}
+                            <span class="status-badge status-processing">Processing</span>
+                        {% else %}
+                            <span class="status-badge status-inactive">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ employee.last_login|date:"M d, Y"|default:"Never" }}</td>
+                    <td>
+                        <a href="{% url 'admin_employee_detail' employee.id %}" class="btn-view">View Details</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 3rem; color: #666;">
+                        No employees found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        {% if employees.has_other_pages %}
+        <div class="pagination">
+            {% if employees.has_previous %}
+                <a href="?page={{ employees.previous_page_number }}" class="page-btn">« Previous</a>
+            {% endif %}
+            
+            {% for num in employees.paginator.page_range %}
+                {% if employees.number == num %}
+                    <span class="page-btn active">{{ num }}</span>
+                {% elif num > employees.number|add:'-3' and num < employees.number|add:'3' %}
+                    <a href="?page={{ num }}" class="page-btn">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if employees.has_next %}
+                <a href="?page={{ employees.next_page_number }}" class="page-btn">Next »</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+    filterTable();
+});
+
+document.getElementById('statusFilter').addEventListener('change', function() {
+    filterTable();
+});
+
+document.getElementById('roleFilter').addEventListener('change', function() {
+    filterTable();
+});
+
+function filterTable() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+    const roleFilter = document.getElementById('roleFilter').value.toLowerCase();
+    const rows = document.querySelectorAll('.employee-row');
+
+    rows.forEach(row => {
+        const name = row.querySelector('td:first-child').textContent.toLowerCase();
+        const role = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        const status = row.querySelector('.status-badge').textContent.toLowerCase();
+
+        const matchesSearch = name.includes(searchTerm);
+        const matchesStatus = !statusFilter || status.includes(statusFilter);
+        const matchesRole = !roleFilter || role.includes(roleFilter);
+
+        if (matchesSearch && matchesStatus && matchesRole) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Row click handler
+document.querySelectorAll('.employee-row').forEach(row => {
+    row.addEventListener('click', function(e) {
+        if (!e.target.classList.contains('btn-view')) {
+            const employeeId = this.dataset.employeeId;
+            window.location.href = `/hr-admin/employee/${employeeId}/`;
+        }
+    });
+});
+</script>
+{% endblock %}

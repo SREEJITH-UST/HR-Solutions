@@ -2,118 +2,340 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sign In / Sign Up</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - NextGenHR</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            min-height: 100vh;
+            color: #2d3748;
+        }
+
         .header {
-            width: 100%;
-            background: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 50%, #68d391 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 16px 32px;
-            margin-bottom: 32px;
-        }
-        .header-logo {
-            height: 40px;
-            width: 40px;
-            margin-right: 16px;
-        }
-        .header-title {
-            font-size: 1.7em;
+            font-size: 1.5rem;
             font-weight: bold;
-            color: #007bff;
-            letter-spacing: 1px;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo i {
+            margin-right: 0.5rem;
+            font-size: 2rem;
+            color: #68d391;
+            transition: color 0.3s ease;
+        }
+
+        .logo:hover i {
+            color: #48bb78;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 40px auto;
-            background: #fff;
-            padding: 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(45, 55, 72, 0.15);
             display: flex;
             overflow: hidden;
+            align-items: stretch; /* Ensures both columns are always equal height */
+            min-height: 480px;    /* Ensures enough height for error messages */
         }
+
         .left {
             flex: 1;
-            background: #e9ecef;
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
             display: flex;
-            align-items: center;
+            align-items: stretch;
             justify-content: center;
             padding: 0;
+            position: relative;
+        }
+        .left img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px 0 0 8px;
+            min-height: 100%;
         }
         .right {
             flex: 1;
-            padding: 40px 30px;
+            padding: 60px 50px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            background: white;
         }
+
         .right img {
             max-width: 100%;
             max-height: 400px;
             object-fit: contain;
+            filter: drop-shadow(0 10px 30px rgba(0,0,0,0.2));
+            border-radius: 15px;
         }
-        h2 { text-align: center; }
-        form { margin-bottom: 20px; }
-        .error { color: red; text-align: center; }
-        input[type="text"], input[type="password"], input[type="email"] {
-            width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px;
-        }
-        button { width: 100%; padding: 10px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .footer {
-            width: 100%;
-            background: #fff;
+
+        h2 { 
             text-align: center;
-            padding: 16px 0;
-            color: #888;
-            font-size: 1em;
-            margin-top: 32px;
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+            color: #2d3748;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        form { 
+            margin-bottom: 20px; 
+        }
+
+        .error { 
+            color: #e53e3e; 
+            text-align: center;
+            background: #fed7d7;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], input[type="password"], input[type="email"] {
+            width: 100%;
+            padding: 15px 20px;
+            margin: 10px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+            color: #2d3748;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus {
+            outline: none;
+            border-color: #68d391;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(104, 211, 145, 0.1);
+            transform: translateY(-2px);
+        }
+
+        select {
+            width: 100%;
+            padding: 15px 20px;
+            margin: 10px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+            color: #2d3748;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #68d391;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(104, 211, 145, 0.1);
+        }
+
+        .login-type-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .login-type-label {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background: white;
+            border: 2px solid transparent;
+        }
+
+        .radio-option:hover {
+            background: rgba(104, 211, 145, 0.1);
+            border-color: #68d391;
+        }
+
+        .radio-option input[type="radio"]:checked + label {
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .radio-option:has(input[type="radio"]:checked) {
+            background: rgba(104, 211, 145, 0.1);
+            border-color: #68d391;
+        }
+
+        .radio-option input[type="radio"] {
+            margin: 0;
+            width: auto;
+            accent-color: #68d391;
+        }
+
+        .radio-option label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        button { 
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(104, 211, 145, 0.3);
+        }
+
+        button:hover { 
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(104, 211, 145, 0.4);
+        }
+
+        .links-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .links-container a {
+            color: #4a5568;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .links-container a:hover {
+            color: #68d391;
+            background: rgba(104, 211, 145, 0.1);
+            transform: translateY(-1px);
+        }
+        .footer {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: white;
+            text-align: center;
+            padding: 30px 0;
+            font-size: 1rem;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                margin: 20px;
+                max-width: none;
+            }
+            
+            .nav-container {
+                padding: 0 1rem;
+            }
+            
+            .right {
+                padding: 40px 30px;
+            }
         }
     </style>
 </head>
 <body>
-<div class="header">
-    <span class="header-logo" style="display:flex;align-items:center;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 1024 1024">
-            <rect width="1024" height="1024" fill="none"/>
-            <rect x="128" y="128" width="768" height="768" rx="112" ry="112" fill="none" stroke="#374151" stroke-width="20"/>
-            <path d="M 220 760 L 220 264 L 300 264 L 600 700 L 600 264 L 684 264 L 684 760 L 604 760 L 300 328 L 300 760 Z" fill="#2563EB"/>
-            <path d="M 600 264 L 684 264 L 684 348 L 600 264 Z" fill="#10B981"/>
-            <path d="M 740 392 A 200 200 0 1 0 740 632 L 740 560 L 820 560 L 820 704 A 320 320 0 1 1 820 320 L 820 392 Z" fill="#10B981" opacity="0.85"/>
-            <rect x="820" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
-            <rect x="930" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
-            <rect x="820" y="560" width="150" height="36" rx="10" fill="#2563EB"/>
-        </svg>
-    </span>
-    <span class="header-title">NextGenHR</span>
-</div>
-<div class="container">
-    <div class="left" style="background: #e9ecef; display: flex; align-items: center; justify-content: center; padding: 0;">
-        <img src="/static/images/login-illustration.png" alt="Sign In Illustration" style="max-width:100%; max-height:420px; width:100%; height:100%; object-fit:cover; border-radius:8px 0 0 8px;">
-    </div>
-    <div class="right" style="padding: 40px 30px; display: flex; flex-direction: column; justify-content: center;">
-        <h2>Sign In</h2>
-        {% if login_error %}<div class="error">{{ login_error }}</div>{% endif %}
-        <form method="post">
-            {% csrf_token %}
-            {{ login_form.as_p }}
-            <button type="submit" name="login">Sign In</button>
-            <div style="text-align:right; margin-top:8px;">
-                <a href="/forgot-password/" style="font-size:0.95em; color:#007bff; text-decoration:none;">Forgot password?</a>
-                <span style="float:left;">
-                    <a href="/signup/" style="font-size:0.95em; color:#007bff; text-decoration:none;">Sign up</a>
-                </span>
+    <div class="header">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-users-cog"></i>
+                <span>NextGenHR</span>
             </div>
-        </form>
+        </div>
     </div>
-</div>
-<div class="footer">
-    &copy; {{ year|default:2025 }} NextGenHR. All rights reserved.
-</div>
+
+    <div class="container">
+        <div class="left">
+            <img src="/static/images/login-illustration.png" alt="Sign In Illustration" 
+                 style="max-width:90%; max-height:350px; object-fit:contain;">
+        </div>
+        
+        <div class="right">
+            <h2>Welcome Back</h2>
+            {% if login_error %}<div class="error">{{ login_error }}</div>{% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Standard Login Fields -->
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
+
+                <button type="submit" name="login">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+                
+                <div class="links-container">
+                    <a href="/signup/">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </a>
+                    <a href="/forgot-password/">
+                        <i class="fas fa-key"></i> Forgot Password?
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        &copy; {{ year|default:2025 }} NextGenHR. All rights reserved.
+    </div>
 </body>
 </html>

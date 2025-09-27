@@ -1,0 +1,302 @@
+<!DOCTYPE html        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, s        .about-hero {
+            background: linear-gradient(135deg, #6b7280 0%, #9ca3af 30%, #86efac 70%, #4ade80 100%);
+            color: white;
+            padding: 150px 0 100px;
+            text-align: center;
+        }rif;
+            line-height: 1.6;
+            color: #374151;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6b7280 0%, #9ca3af 50%, #86efac 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - NextGenHR</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background-color: #f7fafc;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 50%, #68d391 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo i {
+            margin-right: 0.5rem;
+            font-size: 2rem;
+            color: #68d391;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: rgba(134, 239, 172, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Removed btn-login and btn-primary styles - all nav links now use consistent styling */
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .about-hero {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 30%, #68d391 70%, #48bb78 100%);
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+        }
+
+        .about-hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .about-hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .about-content {
+            padding: 100px 0;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #2d3748;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+            border-radius: 2px;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            margin-top: 4rem;
+        }
+
+        .about-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .about-card i {
+            font-size: 3rem;
+            color: #68d391;
+            margin-bottom: 1rem;
+        }
+
+        .about-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .team-section {
+            padding: 100px 0;
+            background: white;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            margin-top: 4rem;
+        }
+
+        .team-member {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 15px;
+        }
+
+        .team-member img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-bottom: 1rem;
+            object-fit: cover;
+        }
+
+        .back-btn {
+            display: inline-block;
+            background-color: #68d391;
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 2rem 0;
+            transition: background-color 0.3s;
+        }
+
+        .back-btn:hover {
+            background-color: #48bb78;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-users-cog"></i>
+                <span>NextGenHR</span>
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li><a href="{% url 'blog' %}">Blog</a></li>
+                    <li><a href="{% url 'login' %}">Login</a></li>
+                    <li><a href="{% url 'signup' %}">Register</a></li>
+                    <li><a href="{% url 'contact' %}">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="about-hero">
+        <div class="container">
+            <h1>About NextGenHR</h1>
+            <p>Our Story and Vision for the Future of Human Resources</p>
+        </div>
+    </section>
+
+    <section class="about-content">
+        <div class="container">
+            <h2 class="section-title">Our Story</h2>
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div style="text-align: center; margin-bottom: 3rem;">
+                    <h3 style="font-size: 1.8rem; color: #2d3748; margin-bottom: 1.5rem; font-weight: 600;">Empowering Organizations Worldwide</h3>
+                    <p style="font-size: 1.15rem; color: #4a5568; line-height: 1.8; margin-bottom: 2rem;">
+                        At NextGenHR, we believe that great companies are built by great people. Our comprehensive platform combines the power of 
+                        artificial intelligence with intuitive design to revolutionize how organizations manage their most valuable asset - their workforce.
+                    </p>
+                </div>
+                
+                <p style="font-size: 1.2rem; text-align: justify; line-height: 1.8; margin-bottom: 2rem; color: #4a5568;">
+                    NextGenHR was founded in 2020 with a simple yet powerful belief: that human resources should be more human, not less. 
+                    Our journey began when our founders, experienced HR professionals and technology innovators, witnessed firsthand the 
+                    frustrations of outdated, complex HR systems that hindered rather than helped organizations care for their people.
+                </p>
+                
+                <p style="font-size: 1.1rem; text-align: justify; line-height: 1.8; margin-bottom: 2rem; color: #4a5568;">
+                    Founded by industry experts with decades of experience in human resources and technology, we understand the challenges 
+                    modern businesses face in talent acquisition, employee development, and workforce management. Our mission is to simplify 
+                    complex HR processes while providing deep insights that drive strategic decision-making and foster organizational growth.
+                </p>
+                
+                <p style="font-size: 1.1rem; text-align: justify; line-height: 1.8; margin-bottom: 2rem; color: #4a5568;">
+                    Starting from a small office with just three passionate individuals, we embarked on a mission to revolutionize how 
+                    companies manage their most valuable asset - their workforce. Through countless hours of research, development, and 
+                    direct feedback from HR professionals across industries, we built a platform that truly understands the unique 
+                    challenges faced by modern organizations.
+                </p>
+                
+                <p style="font-size: 1.1rem; text-align: justify; line-height: 1.8; margin-bottom: 3rem; color: #4a5568;">
+                    Today, NextGenHR serves hundreds of organizations worldwide, from startups to Fortune 500 companies, helping them 
+                    streamline their HR processes while maintaining the personal touch that makes great companies thrive. Our story 
+                    continues to evolve as we grow, but our core commitment remains unchanged: putting people first in everything we do.
+                </p>
+            </div>
+
+            <div class="about-grid">
+                <div class="about-card">
+                    <i class="fas fa-eye"></i>
+                    <h3>Our Vision</h3>
+                    <p>To create a world where every organization can unlock the full potential of their workforce through intelligent technology, data-driven insights, and genuinely human-centered experiences that make work more meaningful and fulfilling.</p>
+                </div>
+                
+                <div class="about-card">
+                    <i class="fas fa-lightbulb"></i>
+                    <h3>Our Future</h3>
+                    <p>We envision a future where AI and human intelligence work together seamlessly, where every employee feels valued and empowered, and where HR becomes a strategic driver of organizational success and employee happiness.</p>
+                </div>
+                
+                <div class="about-card">
+                    <i class="fas fa-heart"></i>
+                    <h3>Our Promise</h3>
+                    <p>To never lose sight of the human element in human resources. As we grow and innovate, we pledge to keep people at the center of everything we create, ensuring technology serves humanity, not the other way around.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <a href="{% url 'home' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+    </div>
+</body>
+</html>

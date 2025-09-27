@@ -2,90 +2,151 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sign Up</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - NextGenHR</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            background: #f4f4f4; 
-            margin: 0; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            min-height: 100vh;
+            color: #2d3748;
+            padding: 0;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
         .header {
-            width: 100%;
-            background: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 50%, #68d391 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 16px 32px;
-            margin-bottom: 32px;
-        }
-        .header-logo {
-            height: 40px;
-            width: 40px;
-            margin-right: 16px;
-        }
-        .header-title {
-            font-size: 1.7em;
+            font-size: 1.5rem;
             font-weight: bold;
-            color: #007bff;
-            letter-spacing: 1px;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo i {
+            margin-right: 0.5rem;
+            font-size: 2rem;
+            color: #68d391;
+            transition: color 0.3s ease;
+        }
+
+        .logo:hover i {
+            color: #48bb78;
         }
         .container {
             max-width: 1200px;
             margin: 20px auto;
-            background: #fff;
-            padding: 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(45, 55, 72, 0.15);
             display: flex;
             flex-direction: row;
-            min-height: 600px;
+            min-height: 800px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
+
         .left {
             flex: 1;
-            background: #e9ecef;
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 0;
-            border-radius: 8px 0 0 8px;
-            height: 100%;
+            position: relative;
+            border-radius: 20px 0 0 20px;
         }
+
+        .left::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, #68d391 0%, rgba(104, 211, 145, 0.1) 100%);
+            opacity: 0.1;
+        }
+
         .right {
-            flex: 1;
-            padding: 30px;
+            flex: 1.2;
+            padding: 40px 50px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            height: 100%;
-            overflow-y: visible;
+            justify-content: flex-start;
+            overflow-y: auto;
+            max-height: 90vh;
         }
-        h2 { text-align: center; margin-bottom: 20px; color: #333; }
+        h2 { 
+            text-align: center; 
+            margin-bottom: 20px; 
+            color: #2d3748;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
+
         .form-group label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.95rem;
         }
+
         .required::after {
             content: " *";
-            color: red;
+            color: #e53e3e;
         }
+
         .form-control {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+            color: #2d3748;
         }
+
         .form-control:focus {
-            border-color: #007bff;
             outline: none;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+            border-color: #68d391;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(104, 211, 145, 0.1);
+            transform: translateY(-2px);
         }
         .phone-group {
             display: flex;
@@ -98,120 +159,311 @@
             flex: 1;
         }
         .password-strength {
-            margin-top: 5px;
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 12px;
+            margin-top: 8px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
             display: none;
+            font-weight: 500;
         }
-        .strength-weak { background: #ffe6e6; color: #d32f2f; }
-        .strength-medium { background: #fff3e0; color: #f57c00; }
-        .strength-strong { background: #e8f5e8; color: #388e3c; }
+        .strength-weak { background: #fed7d7; color: #c53030; }
+        .strength-medium { background: #feebc8; color: #dd6b20; }
+        .strength-strong { background: #c6f6d5; color: #2f855a; }
+        
         .username-status {
-            margin-top: 5px;
-            font-size: 12px;
-            padding: 5px;
-            border-radius: 3px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            border-radius: 8px;
             display: none;
+            font-weight: 500;
         }
         .username-available {
-            background: #e8f5e8;
-            color: #388e3c;
+            background: #c6f6d5;
+            color: #2f855a;
         }
         .username-taken {
-            background: #ffe6e6;
-            color: #d32f2f;
+            background: #fed7d7;
+            color: #c53030;
         }
+        
         .error {
-            color: #d32f2f;
-            font-size: 12px;
+            color: #c53030;
+            font-size: 0.85rem;
             margin-top: 5px;
         }
+        
         .help-text {
-            font-size: 11px;
-            color: #666;
-            margin-top: 3px;
+            font-size: 0.8rem;
+            color: #4a5568;
+            margin-top: 5px;
+            opacity: 0.8;
         }
+        
+        .user-type-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .user-type-label {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            background: white;
+        }
+
+        .radio-option:hover {
+            background: rgba(104, 211, 145, 0.1);
+            border-color: #68d391;
+        }
+
+        .radio-option input[type="radio"]:checked + label {
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .radio-option:has(input[type="radio"]:checked) {
+            background: rgba(104, 211, 145, 0.1);
+            border-color: #68d391;
+        }
+
+        .radio-option input[type="radio"] {
+            margin: 0;
+            width: auto;
+            accent-color: #68d391;
+        }
+
+        .radio-option label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
         button {
             width: 100%;
             padding: 12px;
-            background: #007bff;
-            color: #fff;
+            background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+            color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(104, 211, 145, 0.3);
         }
-        button:hover { background: #0056b3; }
+
+        button:hover { 
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(104, 211, 145, 0.4);
+        }
+
         button:disabled {
-            background: #ccc;
+            background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
+
         .back-link {
             text-align: center;
             margin-top: 15px;
         }
+
         .back-link a {
-            font-size: 0.95em;
-            color: #007bff;
+            color: #4a5568;
             text-decoration: none;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #68d391;
+            background: rgba(104, 211, 145, 0.1);
+            transform: translateY(-1px);
         }
         .footer {
-            width: 100%;
-            background: #fff;
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: white;
             text-align: center;
-            padding: 16px 0;
-            color: #888;
-            font-size: 1em;
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
-            margin-top: 20px;
+            padding: 30px 0;
+            font-size: 1rem;
+            margin-top: 40px;
         }
+
         .form-row {
             display: flex;
-            gap: 15px;
+            gap: 20px;
         }
+
         .form-row .form-group {
             flex: 1;
         }
+
         .errorlist {
             list-style: none;
             padding: 0;
-            margin: 5px 0 0 0;
+            margin: 8px 0 0 0;
         }
+
         .errorlist li {
-            color: #d32f2f;
-            font-size: 12px;
-            margin-bottom: 3px;
+            color: #c53030;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            padding: 8px 12px;
+            background: #fed7d7;
+            border-radius: 6px;
+        }
+
+        .illustration-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .illustration-container i {
+            font-size: 6rem;
+            color: #68d391;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .illustration-container h3 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .illustration-container p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+            line-height: 1.6;
+            max-width: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                margin: 15px;
+                max-width: none;
+                min-height: auto;
+            }
+            
+            .nav-container {
+                padding: 0 1rem;
+            }
+            
+            .right {
+                padding: 30px 25px;
+                max-height: none;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .left {
+                min-height: 200px;
+                border-radius: 20px 20px 0 0;
+            }
+        }
+
+        /* Ensure all form elements are properly spaced and visible */
+        .form-group {
+            position: relative;
+            width: 100%;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+
+        /* Highlight username field */
+        .username-field {
+            background: rgba(104, 211, 145, 0.05) !important;
+            padding: 15px !important;
+            border-radius: 12px !important;
+            border: 2px solid rgba(104, 211, 145, 0.3) !important;
+            margin-bottom: 25px !important;
+        }
+
+        .username-field label {
+            color: #2d3748 !important;
+            font-weight: 700 !important;
+            font-size: 1rem !important;
+        }
+
+        .username-field .form-control {
+            border: 2px solid #68d391 !important;
+            background: white !important;
+        }
+
+        /* Ensure form container has proper height */
+        .right form {
+            width: 100%;
+            min-height: fit-content;
         }
     </style>
 </head>
 <body>
-<div class="header">
-    <span class="header-logo" style="display:flex;align-items:center;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 1024 1024">
-            <rect width="1024" height="1024" fill="none"/>
-            <rect x="128" y="128" width="768" height="768" rx="112" ry="112" fill="none" stroke="#374151" stroke-width="20"/>
-            <path d="M 220 760 L 220 264 L 300 264 L 600 700 L 600 264 L 684 264 L 684 760 L 604 760 L 300 328 L 300 760 Z" fill="#2563EB"/>
-            <path d="M 600 264 L 684 264 L 684 348 L 600 264 Z" fill="#10B981"/>
-            <path d="M 740 392 A 200 200 0 1 0 740 632 L 740 560 L 820 560 L 820 704 A 320 320 0 1 1 820 320 L 820 392 Z" fill="#10B981" opacity="0.85"/>
-            <rect x="820" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
-            <rect x="930" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
-            <rect x="820" y="560" width="150" height="36" rx="10" fill="#2563EB"/>
-        </svg>
-    </span>
-    <span class="header-title">NextGenHR</span>
-</div>
-<div class="container">
-    <div class="left">
-        <img src="/static/images/login-illustration.png" alt="Sign Up Illustration" style="width:100%; height:100%; object-fit:cover; border-radius:8px 0 0 8px;">
-    </div>
-    <div class="right">
-        <h2>Create Your Account</h2>
-        {% if signup_error %}
-            <div style="background: #ffe6e6; color: #d32f2f; padding: 10px; border-radius: 4px; margin-bottom: 20px; text-align: center;">
-                {{ signup_error }}
+    <div class="header">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-users-cog"></i>
+                <span>NextGenHR</span>
             </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="left">
+            <div class="illustration-container">
+                <i class="fas fa-user-plus"></i>
+                <h3>Join NextGenHR</h3>
+                <p>Create your account and start your journey with our advanced HR management platform.</p>
+            </div>
+        </div>
+        
+        <div class="right">
+            <h2>Create Your Account</h2>
+            {% if signup_error %}
+                <div class="error" style="background: #fed7d7; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                    {{ signup_error }}
+                </div>
         {% endif %}
         
         <form method="post" enctype="multipart/form-data" id="signupForm">
@@ -230,7 +482,7 @@
                 </div>
             </div>
             
-            <div class="form-group">
+            <div class="form-group username-field">
                 <label for="{{ signup_form.username.id_for_label }}" class="required">Username</label>
                 {{ signup_form.username }}
                 <div id="username-status" class="username-status"></div>
@@ -253,7 +505,8 @@
                 {{ signup_form.mobile_number.errors }}
             </div>
             
-            <div class="form-group">
+            <!-- Resume Field -->
+            <div class="form-group" id="resume-field">
                 <label for="{{ signup_form.resume.id_for_label }}" class="required">Resume</label>
                 {{ signup_form.resume }}
                 <div class="help-text">{{ signup_form.resume.help_text }}</div>
@@ -274,11 +527,15 @@
                 {{ signup_form.confirm_password.errors }}
             </div>
             
-            <button type="submit" name="signup" id="submitBtn">Create Account</button>
+            <button type="submit" name="signup" id="submitBtn">
+                <i class="fas fa-user-plus"></i> Create Account
+            </button>
         </form>
         
         <div class="back-link">
-            <a href="/">Already have an account? Sign In</a>
+            <a href="{% url 'login' %}">
+                <i class="fas fa-sign-in-alt"></i> Already have an account? Sign In
+            </a>
         </div>
     </div>
 </div>
@@ -397,30 +654,179 @@
     
     // Form validation
     document.getElementById('signupForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
         const password = document.getElementById('id_password').value;
         const confirmPassword = document.getElementById('id_confirm_password').value;
         const mobileNumber = document.querySelector('input[name="mobile_number"]').value;
         
         // Validate mobile number
         if (!/^\d{10}$/.test(mobileNumber)) {
-            e.preventDefault();
             alert('Mobile number must be exactly 10 digits!');
             return false;
         }
         
         if (password !== confirmPassword) {
-            e.preventDefault();
             alert('Passwords do not match!');
             return false;
         }
         
         const strength = calculatePasswordStrength(password);
         if (strength.score < 5) {
-            e.preventDefault();
             alert('Please create a stronger password with all required criteria.');
             return false;
         }
+        
+        // Validate resume for all users
+        const resumeInput = document.querySelector('input[name="resume"]');
+        if (!resumeInput || !resumeInput.files || resumeInput.files.length === 0) {
+            alert('Please upload your resume.');
+            return false;
+        }
+        
+        // Submit form via AJAX
+        submitForm();
     });
+    
+    function submitForm() {
+        const form = document.getElementById('signupForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const formData = new FormData(form);
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+        
+        fetch(form.action || window.location.pathname, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showSuccessPopup(data.message, data.redirect_url);
+            } else {
+                throw new Error(data.message || 'Signup failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Signup failed. Please try again.');
+            // Reset button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+        });
+    }
+    
+    function showSuccessPopup(message, redirectUrl) {
+        // Create popup overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'success-popup-overlay';
+        overlay.innerHTML = `
+            <div class="success-popup">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3>Success!</h3>
+                <p>${message}</p>
+                <button onclick="redirectToNextPage('${redirectUrl}')">Continue</button>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // Add styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .success-popup-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                animation: fadeIn 0.3s ease;
+            }
+            
+            .success-popup {
+                background: white;
+                padding: 40px;
+                border-radius: 20px;
+                text-align: center;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                max-width: 400px;
+                width: 90%;
+                animation: slideIn 0.3s ease;
+            }
+            
+            .success-icon {
+                font-size: 4rem;
+                color: #68d391;
+                margin-bottom: 20px;
+            }
+            
+            .success-popup h3 {
+                color: #2d3748;
+                font-size: 1.5rem;
+                margin-bottom: 15px;
+                font-weight: 600;
+            }
+            
+            .success-popup p {
+                color: #4a5568;
+                font-size: 1rem;
+                margin-bottom: 30px;
+                line-height: 1.5;
+            }
+            
+            .success-popup button {
+                background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+                color: white;
+                border: none;
+                padding: 15px 30px;
+                border-radius: 10px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(104, 211, 145, 0.3);
+            }
+            
+            .success-popup button:hover {
+                background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 25px rgba(104, 211, 145, 0.4);
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-30px) scale(0.9);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    function redirectToNextPage(url) {
+        window.location.href = url;
+    }
 </script>
 </body>
 </html>

@@ -271,6 +271,26 @@ tmp/
 /media/
 /static/
 local_settings.py
+
+# Sensitive configuration files
+.env.local
+.env.production
+.env.development
+secrets.py
+config.py
+keys.py
+credentials.json
+*.key
+*.pem
+*.cert
+
+# API Keys and secrets (additional protection)
+*secret*
+*key*
+*token*
+*api_key*
+*password*
+
 # Migrations
 **/migrations/*.pyc
 **/migrations/*.pyo

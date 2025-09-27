@@ -1,0 +1,25 @@
+# Alternative Email Configuration for Gmail (SSL instead of TLS)
+# If you're experiencing SSL handshake timeout errors, try uncommenting these lines
+# and commenting out the TLS configuration in settings.py
+
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 465
+# EMAIL_USE_SSL = True
+# EMAIL_USE_TLS = False
+# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+# DEFAULT_FROM_EMAIL = 'NextGenHR <noreply@nextgenhr.com>'
+# EMAIL_TIMEOUT = 60
+
+# Other alternative SMTP servers you can try:
+# 
+# For Outlook/Hotmail:
+# EMAIL_HOST = 'smtp.office365.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# 
+# For Yahoo:
+# EMAIL_HOST = 'smtp.mail.yahoo.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
