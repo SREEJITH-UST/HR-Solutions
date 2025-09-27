@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+{% block title %}Admin Skill-Up Dashboard - NextGenHR{% endblock %}
+{% block extra_head %}
+<style>
+.admin-dashboard { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+.overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+.overview-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+.overview-number { font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+.overview-label { color: #666; font-size: 0.9rem; }
+.candidates-section { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.candidate-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.candidate-table th, .candidate-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #eee; }
+.candidate-table th { background: #f8f9fa; font-weight: 600; color: #333; }
+.candidate-table tr:hover { background: #f8f9fa; }
+.progress-cell { position: relative; }
+.progress-mini { width: 60px; height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
+.progress-mini-fill { height: 100%; background: linear-gradient(90deg, #007bff, #0056b3); }
+.status-cell { text-align: center; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.5rem; }
+.status-assigned { background: #ffc107; }
+.status-in-progress { background: #007bff; }
+.status-completed { background: #28a745; }
+.status-failed { background: #dc3545; }
+.actions-cell { text-align: center; }
+.btn-small { padding: 0.25rem 0.75rem; font-size: 0.8rem; border: none; border-radius: 4px; cursor: pointer; margin: 0 0.25rem; text-decoration: none; }
+.btn-view { background: #007bff; color: white; }
+.btn-assign { background: #28a745; color: white; }
+.btn-delete { background: #dc3545; color: white; }
+.search-bar { display: flex; gap: 1rem; margin-bottom: 2rem; align-items: center; }
+.search-input { padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 6px; flex: 1; }
+.filter-select { padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 6px; background: white; }
+.assign-course-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+.modal-content { background: white; margin: 5% auto; padding: 2rem; border-radius: 12px; max-width: 600px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.close-modal { font-size: 1.5rem; cursor: pointer; color: #666; }
+.course-list { max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; }
+.course-item { padding: 1rem; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
+.course-item:hover { background: #f8f9fa; }
+.course-item.selected { background: #e3f2fd; }
+.assessment-indicator { color: #1976d2; font-size: 0.8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="page-header" style="margin-bottom: 2rem;">
+        <h1 style="color: #333; margin-bottom: 0.5rem;">👨‍💼 Admin Skill-Up Dashboard</h1>
+        <p style="color: #666;">Monitor candidate progress and manage course assignments</p>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="overview-grid">
+        <div class="overview-card">
+            <div class="overview-number" style="color: #007bff;">{{ total_candidates }}</div>
+            <div class="overview-label">Total Candidates</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-number" style="color: #28a745;">{{ active_assignments }}</div>
+            <div class="overview-label">Active Assignments</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-number" style="color: #ffc107;">{{ in_progress_assessments }}</div>
+            <div class="overview-label">Ongoing Assessments</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-number" style="color: #17a2b8;">{{ completed_today }}</div>
+            <div class="overview-label">Completed Today</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-number" style="color: #6f42c1;">{{ avg_completion_rate|floatformat:1 }}%</div>
+            <div class="overview-label">Avg. Completion Rate</div>
+        </div>
+    </div>
+
+    <!-- Candidates Section -->
+    <div class="candidates-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="color: #333; margin: 0;">📊 Candidate Progress</h2>
+            <button class="btn-assign" style="padding: 0.5rem 1rem;" onclick="showBulkAssignModal()">➕ Bulk Assign Courses</button>
+        </div>
+
+        <!-- Search and Filter Bar -->
+        <div class="search-bar">
+            <input type="text" class="search-input" placeholder="Search by name or email..." id="searchInput" onkeyup="filterTable()">
+            <select class="filter-select" id="statusFilter" onchange="filterTable()">
+                <option value="">All Statuses</option>
+                <option value="assigned">Assigned</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+            </select>
+            <select class="filter-select" id="assessmentFilter" onchange="filterTable()">
+                <option value="">All Types</option>
+                <option value="with_assessment">With Video Assessment</option>
+                <option value="without_assessment">Without Assessment</option>
+            </select>
+        </div>
+
+        <!-- Candidates Table -->
+        <table class="candidate-table" id="candidatesTable">
+            <thead>
+                <tr>
+                    <th>👤 Candidate</th>
+                    <th>📚 Course</th>
+                    <th>📈 Progress</th>
+                    <th>🎯 Status</th>
+                    <th>📹 Assessment</th>
+                    <th>📊 Score</th>
+                    <th>📅 Assigned</th>
+                    <th>⚡ Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assignment in assignments %}
+                <tr data-status="{{ assignment.status }}" data-assessment="{% if assignment.course.has_video_assessment %}with_assessment{% else %}without_assessment{% endif %}">
+                    <td>
+                        <div>
+                            <strong>{{ assignment.employee.first_name }} {{ assignment.employee.last_name }}</strong><br>
+                            <small style="color: #666;">{{ assignment.employee.email }}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <strong>{{ assignment.course.title }}</strong><br>
+                            <small style="color: #666;">{{ assignment.course.instructor_name }} • {{ assignment.course.duration_hours }}h</small>
+                        </div>
+                    </td>
+                    <td class="progress-cell">
+                        <div class="progress-mini">
+                            <div class="progress-mini-fill" style="width: {{ assignment.progress_percentage }}%;"></div>
+                        </div>
+                        <small>{{ assignment.progress_percentage }}%</small>
+                    </td>
+                    <td class="status-cell">
+                        <span class="status-dot status-{{ assignment.status }}"></span>
+                        {% if assignment.status == 'assigned' %}📋 Assigned
+                        {% elif assignment.status == 'in_progress' %}🔄 In Progress  
+                        {% elif assignment.status == 'completed' %}✅ Completed
+                        {% elif assignment.status == 'failed' %}❌ Failed
+                        {% endif %}
+                    </td>
+                    <td class="status-cell">
+                        {% if assignment.course.has_video_assessment %}
+                            {% if assignment.video_assessment %}
+                                {% if assignment.video_assessment.status == 'completed' %}
+                                    <span style="color: #28a745;">📹 ✅</span><br>
+                                    <small class="assessment-indicator">{{ assignment.video_assessment.final_score|floatformat:1 }}%</small>
+                                {% elif assignment.video_assessment.status == 'in_progress' %}
+                                    <span style="color: #ffc107;">📹 🔄</span><br>
+                                    <small class="assessment-indicator">In Progress</small>
+                                {% else %}
+                                    <span style="color: #6c757d;">📹 ⏳</span><br>
+                                    <small class="assessment-indicator">Scheduled</small>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #6c757d;">📹 ⏳</span><br>
+                                <small class="assessment-indicator">Not Started</small>
+                            {% endif %}
+                        {% else %}
+                            <span style="color: #999;">➖</span><br>
+                            <small class="assessment-indicator">N/A</small>
+                        {% endif %}
+                    </td>
+                    <td class="status-cell">
+                        {% if assignment.score %}
+                            <strong>{{ assignment.score|floatformat:1 }}%</strong>
+                        {% else %}
+                            <span style="color: #999;">--</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small>{{ assignment.assigned_at|date:"M d, Y" }}</small><br>
+                        <small style="color: #666;">by {{ assignment.assigned_by.first_name }}</small>
+                    </td>
+                    <td class="actions-cell">
+                        <a href="{% url 'admin_view_progress' assignment.id %}" class="btn-small btn-view">👁️ View</a>
+                        <button class="btn-small btn-assign" onclick="assignCourse({{ assignment.employee.id }})">➕ Assign</button>
+                        {% if assignment.video_assessment and assignment.video_assessment.status == 'completed' %}
+                            <a href="{% url 'admin_view_assessment' assignment.video_assessment.id %}" class="btn-small btn-view">📊 Assessment</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem; color: #666;">
+                        📚 No course assignments found. Start by assigning courses to candidates.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Assign Course Modal -->
+<div class="assign-course-modal" id="assignCourseModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📚 Assign Course</h3>
+            <span class="close-modal" onclick="closeAssignModal()">&times;</span>
+        </div>
+        <div>
+            <p>Select a course to assign to <strong id="selectedCandidateName">candidate</strong>:</p>
+            <div class="course-list" id="courseList">
+                {% for course in available_courses %}
+                <div class="course-item" data-course-id="{{ course.id }}" onclick="selectCourse(this)">
+                    <div>
+                        <strong>{{ course.title }}</strong>
+                        {% if course.has_video_assessment %}
+                            <span class="assessment-indicator">📹 Video Assessment</span>
+                        {% endif %}
+                    </div>
+                    <small style="color: #666;">{{ course.instructor_name }} • {{ course.duration_hours }}h • {{ course.get_difficulty_level_display }}</small>
+                </div>
+                {% endfor %}
+            </div>
+            <div style="margin-top: 1rem; text-align: right;">
+                <button class="btn-small" style="background: #6c757d; color: white; padding: 0.5rem 1rem;" onclick="closeAssignModal()">Cancel</button>
+                <button class="btn-small btn-assign" style="padding: 0.5rem 1rem;" onclick="confirmAssignment()" disabled id="confirmBtn">Assign Course</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedCandidateId = null;
+let selectedCourseId = null;
+
+function filterTable() {
+    const searchInput = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const assessmentFilter = document.getElementById('assessmentFilter').value;
+    const rows = document.querySelectorAll('#candidatesTable tbody tr');
+    
+    rows.forEach(row => {
+        const candidateText = row.cells[0].textContent.toLowerCase();
+        const courseText = row.cells[1].textContent.toLowerCase();
+        const status = row.getAttribute('data-status');
+        const assessment = row.getAttribute('data-assessment');
+        
+        const matchesSearch = candidateText.includes(searchInput) || courseText.includes(searchInput);
+        const matchesStatus = !statusFilter || status === statusFilter;
+        const matchesAssessment = !assessmentFilter || assessment === assessmentFilter;
+        
+        if (matchesSearch && matchesStatus && matchesAssessment) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function assignCourse(candidateId) {
+    selectedCandidateId = candidateId;
+    const candidateName = event.target.closest('tr').cells[0].querySelector('strong').textContent;
+    document.getElementById('selectedCandidateName').textContent = candidateName;
+    document.getElementById('assignCourseModal').style.display = 'block';
+}
+
+function selectCourse(courseItem) {
+    // Remove previous selection
+    document.querySelectorAll('.course-item').forEach(item => item.classList.remove('selected'));
+    
+    // Select current course
+    courseItem.classList.add('selected');
+    selectedCourseId = courseItem.getAttribute('data-course-id');
+    document.getElementById('confirmBtn').disabled = false;
+}
+
+async function confirmAssignment() {
+    if (!selectedCandidateId || !selectedCourseId) return;
+    
+    try {
+        const response = await fetch('/api/assign-course/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                candidate_id: selectedCandidateId,
+                course_id: selectedCourseId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Course assigned successfully! 🎉');
+            location.reload();
+        } else {
+            alert('Error assigning course: ' + result.message);
+        }
+        
+    } catch (error) {
+        console.error('Assignment error:', error);
+        alert('Error assigning course. Please try again.');
+    }
+    
+    closeAssignModal();
+}
+
+function closeAssignModal() {
+    document.getElementById('assignCourseModal').style.display = 'none';
+    selectedCandidateId = null;
+    selectedCourseId = null;
+    document.getElementById('confirmBtn').disabled = true;
+    document.querySelectorAll('.course-item').forEach(item => item.classList.remove('selected'));
+}
+
+function showBulkAssignModal() {
+    // Implementation for bulk assignment
+    alert('Bulk assignment feature coming soon! 🚀');
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

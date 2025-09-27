@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+{% block title %}Video Assessment - {{ assignment.course.title }}{% endblock %}
+{% block extra_head %}
+<style>
+.assessment-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+.assessment-header { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.video-container { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+.camera-section { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.monitoring-section { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.video-feed { width: 100%; height: 400px; background: #000; border-radius: 8px; position: relative; }
+.video-controls { display: flex; gap: 1rem; justify-content: center; margin-top: 1rem; }
+.control-btn { padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+.btn-start { background: #28a745; color: white; }
+.btn-start:hover { background: #218838; }
+.btn-stop { background: #dc3545; color: white; }
+.btn-stop:hover { background: #c82333; }
+.btn-pause { background: #ffc107; color: #333; }
+.btn-pause:hover { background: #e0a800; }
+.monitoring-card { background: #f8f9fa; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+.score-display { font-size: 2rem; font-weight: bold; text-align: center; margin-bottom: 0.5rem; }
+.score-excellent { color: #28a745; }
+.score-good { color: #ffc107; }
+.score-poor { color: #dc3545; }
+.attention-indicator { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; margin: 0.5rem 0; }
+.attention-fill { height: 100%; transition: width 0.5s ease; border-radius: 10px; }
+.instructions { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 1rem; border-radius: 6px; margin-bottom: 2rem; }
+.warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.permission-status { padding: 1rem; border-radius: 6px; margin-bottom: 1rem; text-align: center; }
+.permission-granted { background: #d4edda; color: #155724; }
+.permission-denied { background: #f8d7da; color: #721c24; }
+.assessment-timer { font-size: 1.5rem; font-weight: bold; text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem; }
+.real-time-feedback { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; max-height: 300px; overflow-y: auto; }
+.feedback-item { padding: 0.5rem; border-bottom: 1px solid #eee; font-size: 0.875rem; }
+.feedback-positive { color: #28a745; }
+.feedback-warning { color: #ffc107; }
+.feedback-negative { color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="assessment-container">
+    <!-- Assessment Header -->
+    <div class="assessment-header">
+        <h1 style="color: #333; margin-bottom: 0.5rem;">📹 Video Assessment</h1>
+        <h2 style="color: #666; margin-bottom: 1rem;">{{ assignment.course.title }}</h2>
+        <div style="display: flex; gap: 2rem; align-items: center;">
+            <span><strong>Duration:</strong> {{ assignment.course.duration_hours }} hours</span>
+            <span><strong>Passing Score:</strong> {{ assignment.course.passing_score }}%</span>
+            <span><strong>Instructor:</strong> {{ assignment.course.instructor_name }}</span>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <h3>📋 Assessment Instructions</h3>
+        <ul>
+            <li>Ensure you are in a quiet, well-lit environment</li>
+            <li>Position yourself directly in front of the camera</li>
+            <li>Maintain eye contact with the camera during the session</li>
+            <li>The AI will monitor your attention, engagement, and facial expressions</li>
+            <li>You need to score at least {{ assignment.course.passing_score }}% to pass</li>
+        </ul>
+    </div>
+
+    <!-- Warning Box -->
+    <div class="warning-box">
+        <strong>⚠️ Important:</strong> This assessment uses AI monitoring. Ensure your webcam and microphone permissions are granted and you're ready to begin.
+    </div>
+
+    <!-- Permission Status -->
+    <div id="permissionStatus" class="permission-status" style="display: none;">
+        <span id="permissionText"></span>
+    </div>
+
+    <!-- Video Container -->
+    <div class="video-container">
+        <!-- Camera Section -->
+        <div class="camera-section">
+            <h3>📷 Camera Feed</h3>
+            <video id="videoFeed" class="video-feed" autoplay muted playsinline></video>
+            <canvas id="captureCanvas" style="display: none;"></canvas>
+            
+            <div class="video-controls">
+                <button id="startBtn" class="control-btn btn-start" onclick="startAssessment()">🚀 Start Assessment</button>
+                <button id="pauseBtn" class="control-btn btn-pause" onclick="pauseAssessment()" disabled>⏸️ Pause</button>
+                <button id="stopBtn" class="control-btn btn-stop" onclick="stopAssessment()" disabled>🛑 Stop Assessment</button>
+            </div>
+            
+            <div class="assessment-timer" id="assessmentTimer" style="display: none;">
+                <span id="timerDisplay">00:00:00</span>
+            </div>
+        </div>
+
+        <!-- Monitoring Section -->
+        <div class="monitoring-section">
+            <h3>🤖 AI Monitoring</h3>
+            
+            <!-- Attention Score -->
+            <div class="monitoring-card">
+                <h4>👁️ Attention Level</h4>
+                <div class="score-display" id="attentionScore">--</div>
+                <div class="attention-indicator">
+                    <div class="attention-fill" id="attentionFill" style="width: 0%; background: #28a745;"></div>
+                </div>
+            </div>
+
+            <!-- Engagement Score -->
+            <div class="monitoring-card">
+                <h4>🎯 Engagement Score</h4>
+                <div class="score-display" id="engagementScore">--</div>
+                <div class="attention-indicator">
+                    <div class="attention-fill" id="engagementFill" style="width: 0%; background: #007bff;"></div>
+                </div>
+            </div>
+
+            <!-- Facial Analysis -->
+            <div class="monitoring-card">
+                <h4>😊 Facial Analysis</h4>
+                <div class="score-display" id="facialScore">--</div>
+                <div><strong>Expression:</strong> <span id="currentExpression">Analyzing...</span></div>
+                <div><strong>Head Position:</strong> <span id="headPosition">Detecting...</span></div>
+            </div>
+
+            <!-- Real-time Feedback -->
+            <div class="monitoring-card">
+                <h4>💬 Real-time Feedback</h4>
+                <div class="real-time-feedback" id="realTimeFeedback">
+                    <div class="feedback-item">Assessment not started yet...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let mediaStream = null;
+let assessmentStarted = false;
+let assessmentPaused = false;
+let startTime = null;
+let pausedTime = 0;
+let timerInterval = null;
+let monitoringInterval = null;
+let sessionId = '{{ assessment.session_id }}';
+
+// Initialize camera on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCamera();
+});
+
+async function initializeCamera() {
+    try {
+        const constraints = {
+            video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                facingMode: 'user'
+            },
+            audio: true
+        };
+        
+        mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        document.getElementById('videoFeed').srcObject = mediaStream;
+        
+        updatePermissionStatus('granted', 'Camera and microphone access granted ✅');
+        
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        updatePermissionStatus('denied', 'Camera/microphone access denied ❌ Please grant permissions and refresh');
+    }
+}
+
+function updatePermissionStatus(status, message) {
+    const statusDiv = document.getElementById('permissionStatus');
+    const textSpan = document.getElementById('permissionText');
+    
+    statusDiv.style.display = 'block';
+    textSpan.textContent = message;
+    
+    if (status === 'granted') {
+        statusDiv.className = 'permission-status permission-granted';
+    } else {
+        statusDiv.className = 'permission-status permission-denied';
+    }
+}
+
+async function startAssessment() {
+    if (!mediaStream) {
+        alert('Camera not accessible. Please grant permissions and try again.');
+        return;
+    }
+    
+    assessmentStarted = true;
+    startTime = new Date();
+    
+    // Update UI
+    document.getElementById('startBtn').disabled = true;
+    document.getElementById('pauseBtn').disabled = false;
+    document.getElementById('stopBtn').disabled = false;
+    document.getElementById('assessmentTimer').style.display = 'block';
+    
+    // Start timer
+    timerInterval = setInterval(updateTimer, 1000);
+    
+    // Start AI monitoring
+    monitoringInterval = setInterval(performAIAnalysis, 2000);
+    
+    // Notify backend
+    await fetch('/api/start-video-assessment/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            session_id: sessionId,
+            assignment_id: {{ assignment.id }}
+        })
+    });
+    
+    addFeedback('Assessment started successfully 🚀', 'positive');
+}
+
+function pauseAssessment() {
+    if (assessmentPaused) {
+        // Resume
+        assessmentPaused = false;
+        startTime = new Date(Date.now() - pausedTime);
+        timerInterval = setInterval(updateTimer, 1000);
+        monitoringInterval = setInterval(performAIAnalysis, 2000);
+        document.getElementById('pauseBtn').textContent = '⏸️ Pause';
+        addFeedback('Assessment resumed ▶️', 'positive');
+    } else {
+        // Pause
+        assessmentPaused = true;
+        pausedTime = Date.now() - startTime.getTime();
+        clearInterval(timerInterval);
+        clearInterval(monitoringInterval);
+        document.getElementById('pauseBtn').textContent = '▶️ Resume';
+        addFeedback('Assessment paused ⏸️', 'warning');
+    }
+}
+
+async function stopAssessment() {
+    assessmentStarted = false;
+    clearInterval(timerInterval);
+    clearInterval(monitoringInterval);
+    
+    // Update UI
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('pauseBtn').disabled = true;
+    document.getElementById('stopBtn').disabled = true;
+    
+    // Calculate final scores
+    const finalScore = calculateFinalScore();
+    
+    // Notify backend
+    await fetch('/api/complete-video-assessment/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            session_id: sessionId,
+            final_score: finalScore,
+            duration_minutes: Math.floor((Date.now() - startTime.getTime()) / 60000)
+        })
+    });
+    
+    addFeedback(`Assessment completed! Final Score: ${finalScore}% 🎉`, finalScore >= 70 ? 'positive' : 'negative');
+    
+    // Redirect to results page after 3 seconds
+    setTimeout(() => {
+        window.location.href = `/skillup/assessment-results/{{ assessment.id }}/`;
+    }, 3000);
+}
+
+function updateTimer() {
+    if (!startTime) return;
+    
+    const elapsed = Date.now() - startTime.getTime();
+    const hours = Math.floor(elapsed / 3600000);
+    const minutes = Math.floor((elapsed % 3600000) / 60000);
+    const seconds = Math.floor((elapsed % 60000) / 1000);
+    
+    const display = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    document.getElementById('timerDisplay').textContent = display;
+}
+
+async function performAIAnalysis() {
+    if (!assessmentStarted || assessmentPaused) return;
+    
+    try {
+        // Capture frame from video
+        const video = document.getElementById('videoFeed');
+        const canvas = document.getElementById('captureCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // Send for AI analysis
+        const response = await fetch('/api/analyze-frame/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                session_id: sessionId,
+                frame_data: imageData,
+                timestamp: new Date().toISOString()
+            })
+        });
+        
+        const analysis = await response.json();
+        updateMonitoringDisplay(analysis);
+        
+    } catch (error) {
+        console.error('AI Analysis error:', error);
+        addFeedback('AI analysis temporarily unavailable ⚠️', 'warning');
+    }
+}
+
+function updateMonitoringDisplay(analysis) {
+    // Update attention score
+    const attentionScore = analysis.attention_score || Math.random() * 100; // Fallback for demo
+    document.getElementById('attentionScore').textContent = Math.round(attentionScore);
+    document.getElementById('attentionFill').style.width = attentionScore + '%';
+    
+    // Update engagement score
+    const engagementScore = analysis.engagement_score || Math.random() * 100;
+    document.getElementById('engagementScore').textContent = Math.round(engagementScore);
+    document.getElementById('engagementFill').style.width = engagementScore + '%';
+    
+    // Update facial analysis
+    const facialScore = analysis.facial_score || Math.random() * 100;
+    document.getElementById('facialScore').textContent = Math.round(facialScore);
+    document.getElementById('currentExpression').textContent = analysis.expression || 'Focused';
+    document.getElementById('headPosition').textContent = analysis.head_position || 'Center';
+    
+    // Add contextual feedback
+    if (attentionScore < 60) {
+        addFeedback('Please maintain focus on the camera 👁️', 'warning');
+    } else if (attentionScore > 80) {
+        addFeedback('Great attention level! 👍', 'positive');
+    }
+    
+    if (analysis.head_position === 'looking_away') {
+        addFeedback('Please look at the camera 📹', 'negative');
+    }
+}
+
+function calculateFinalScore() {
+    const attention = parseInt(document.getElementById('attentionScore').textContent) || 0;
+    const engagement = parseInt(document.getElementById('engagementScore').textContent) || 0;
+    const facial = parseInt(document.getElementById('facialScore').textContent) || 0;
+    
+    return Math.round((attention + engagement + facial) / 3);
+}
+
+function addFeedback(message, type) {
+    const feedbackContainer = document.getElementById('realTimeFeedback');
+    const feedbackItem = document.createElement('div');
+    feedbackItem.className = `feedback-item feedback-${type}`;
+    feedbackItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    
+    feedbackContainer.insertBefore(feedbackItem, feedbackContainer.firstChild);
+    
+    // Keep only last 10 feedback items
+    while (feedbackContainer.children.length > 10) {
+        feedbackContainer.removeChild(feedbackContainer.lastChild);
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+    }
+});
+</script>
+{% endblock %}

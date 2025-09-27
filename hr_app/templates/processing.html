@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Processing Your Resume - NextGenHR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .processing-container {
+            background: white;
+            padding: 60px 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .logo {
+            margin-bottom: 30px;
+        }
+        
+        .processing-title {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .processing-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.5;
+        }
+        
+        .loader {
+            width: 80px;
+            height: 80px;
+            margin: 30px auto;
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .progress-steps {
+            margin: 40px 0;
+            text-align: left;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .step.completed {
+            background: #e8f5e8;
+            color: #388e3c;
+        }
+        
+        .step.active {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .step.pending {
+            background: #f5f5f5;
+            color: #999;
+        }
+        
+        .step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .completed .step-icon {
+            background: #388e3c;
+            color: white;
+        }
+        
+        .active .step-icon {
+            background: #1976d2;
+            color: white;
+        }
+        
+        .pending .step-icon {
+            background: #ccc;
+            color: white;
+        }
+        
+        .status-message {
+            font-size: 18px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        
+        .success {
+            color: #388e3c;
+        }
+        
+        .error {
+            color: #d32f2f;
+        }
+        
+        .processing {
+            color: #1976d2;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="processing-container">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 1024 1024">
+                <rect width="1024" height="1024" fill="none"/>
+                <rect x="128" y="128" width="768" height="768" rx="112" ry="112" fill="none" stroke="#374151" stroke-width="20"/>
+                <path d="M 220 760 L 220 264 L 300 264 L 600 700 L 600 264 L 684 264 L 684 760 L 604 760 L 300 328 L 300 760 Z" fill="#2563EB"/>
+                <path d="M 600 264 L 684 264 L 684 348 L 600 264 Z" fill="#10B981"/>
+                <path d="M 740 392 A 200 200 0 1 0 740 632 L 740 560 L 820 560 L 820 704 A 320 320 0 1 1 820 320 L 820 392 Z" fill="#10B981" opacity="0.85"/>
+                <rect x="820" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
+                <rect x="930" y="420" width="40" height="340" rx="12" fill="#2563EB"/>
+                <rect x="820" y="560" width="150" height="36" rx="10" fill="#2563EB"/>
+            </svg>
+        </div>
+        
+        <h1 class="processing-title">Welcome to NextGenHR!</h1>
+        <p class="processing-subtitle">
+            We're analyzing your resume using advanced AI technology to create your professional profile.
+            This may take a few moments.
+        </p>
+        
+        <div class="loader" id="loader"></div>
+        
+        <div class="progress-steps">
+            <div class="step completed" id="step1">
+                <div class="step-icon">✓</div>
+                <div>Account created successfully</div>
+            </div>
+            <div class="step active" id="step2">
+                <div class="step-icon">2</div>
+                <div>Extracting resume content</div>
+            </div>
+            <div class="step pending" id="step3">
+                <div class="step-icon">3</div>
+                <div>AI analysis in progress</div>
+            </div>
+            <div class="step pending" id="step4">
+                <div class="step-icon">4</div>
+                <div>Building your profile</div>
+            </div>
+            <div class="step pending" id="step5">
+                <div class="step-icon">5</div>
+                <div>Profile ready!</div>
+            </div>
+        </div>
+        
+        <div class="status-message processing" id="statusMessage">
+            Processing your resume...
+        </div>
+        
+        <a href="#" class="btn" id="continueBtn" style="display: none;">Continue to Dashboard</a>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let processingComplete = false;
+        
+        function updateStep(stepNumber, status) {
+            const step = document.getElementById(`step${stepNumber}`);
+            const icon = step.querySelector('.step-icon');
+            
+            step.className = `step ${status}`;
+            
+            if (status === 'completed') {
+                icon.textContent = '✓';
+            } else if (status === 'active') {
+                icon.textContent = stepNumber;
+            }
+        }
+        
+        function checkProcessingStatus() {
+            fetch('/check-processing-status/')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Processing status:', data);
+                    
+                    if (data.status === 'completed' && data.processed) {
+                        // Processing complete
+                        processingComplete = true;
+                        
+                        // Mark all steps as completed
+                        for (let i = 2; i <= 5; i++) {
+                            updateStep(i, 'completed');
+                        }
+                        
+                        // Hide loader
+                        document.getElementById('loader').style.display = 'none';
+                        
+                        // Update status message
+                        document.getElementById('statusMessage').innerHTML = '<span class="success">✓ Your profile has been created successfully!</span>';
+                        
+                        // Show continue button
+                        const continueBtn = document.getElementById('continueBtn');
+                        continueBtn.style.display = 'inline-block';
+                        continueBtn.href = '/dashboard/';
+                        
+                    } else if (data.status === 'failed') {
+                        // Processing failed
+                        processingComplete = true;
+                        
+                        // Hide loader
+                        document.getElementById('loader').style.display = 'none';
+                        
+                        // Update status message
+                        document.getElementById('statusMessage').innerHTML = '<span class="error">❌ Resume processing failed. Please try again.</span>';
+                        
+                        // Show continue button (will go to dashboard with limited profile)
+                        const continueBtn = document.getElementById('continueBtn');
+                        continueBtn.style.display = 'inline-block';
+                        continueBtn.href = '/dashboard/';
+                        continueBtn.textContent = 'Continue Anyway';
+                        
+                    } else {
+                        // Still processing - update steps
+                        if (currentStep < 5) {
+                            updateStep(currentStep, 'completed');
+                            currentStep++;
+                            updateStep(currentStep, 'active');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking status:', error);
+                    // Auto-redirect after 10 seconds if there's an error
+                    setTimeout(() => {
+                        window.location.href = '/dashboard/';
+                    }, 10000);
+                });
+        }
+        
+        // Start checking status
+        const statusInterval = setInterval(() => {
+            if (!processingComplete) {
+                checkProcessingStatus();
+            } else {
+                clearInterval(statusInterval);
+            }
+        }, 2000);
+        
+        // Initial check
+        setTimeout(checkProcessingStatus, 1000);
+        
+        // Fallback redirect after 30 seconds
+        setTimeout(() => {
+            if (!processingComplete) {
+                window.location.href = '/dashboard/';
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

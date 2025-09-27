@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="development-section">
+    <div class="development-header">
+        <h2 style="margin: 0; font-size: 1.5rem;">🎓 Professional Development</h2>
+        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">AI-powered course recommendations based on your profile</p>
+    </div>
+    <div class="development-content">
+        {% if candidate_profile.development_plans.all %}
+            {% for plan in candidate_profile.development_plans.all %}
+            <div class="course-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                    <h3 class="course-title">{{ plan.course.title }}</h3>
+                    <span class="status-badge status-{{ plan.status }}">{{ plan.get_status_display }}</span>
+                </div>
+                <p style="color: #666; margin-bottom: 0.75rem;">{{ plan.course.description }}</p>
+                <div class="course-meta">
+                    <span>📚 {{ plan.course.provider|title }}</span>
+                    <span>⏱️ {{ plan.course.duration_hours }} hours</span>
+                    <span>📊 Difficulty: {{ plan.course.get_difficulty_level_display }}</span>
+                    <span>⭐ {{ plan.course.rating }}/5.0</span>
+                    {% if plan.course.price > 0 %}
+                    <span>💰 ${{ plan.course.price }}</span>
+                    {% else %}
+                    <span style="color: #28a745;">✨ Free</span>
+                    {% endif %}
+                </div>
+                {% if plan.course.skills_covered %}
+                <div class="course-skills">
+                    <strong>Skills Covered:</strong>
+                    {% for skill in plan.course.skills_covered %}
+                    <span class="skill-tag">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div style="margin: 0.75rem 0;">
+                    <strong>Gap Addressed:</strong> {{ plan.skill_gap_identified }}<br>
+                    <strong>Priority:</strong> {{ plan.get_priority_level_display }}<br>
+                    <strong>Reason:</strong> {{ plan.assignment_reason }}
+                </div>
+                {% if plan.status == 'in_progress' or plan.status == 'completed' %}
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ plan.progress_percentage }}%;"></div>
+                </div>
+                <small>Progress: {{ plan.progress_percentage }}%</small>
+                {% endif %}
+                <div class="course-actions">
+                    {% if plan.status == 'recommended' %}
+                    <button onclick="enrollCourse({{ plan.id }})" class="btn-enroll">🚀 Enroll Now</button>
+                    {% elif plan.status == 'in_progress' %}
+                    <a href="{{ plan.course.course_url }}" target="_blank" class="btn-enroll">📖 Continue Learning</a>
+                    <button onclick="updateProgress({{ plan.id }})" class="btn-progress">📈 Update Progress</button>
+                    {% elif plan.status == 'completed' %}
+                    <span style="color: #28a745; font-weight: 600;">✅ Completed</span>
+                    {% endif %}
+                    <a href="{{ plan.course.course_url }}" target="_blank" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.875rem;">🔗 View Course</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-courses">
+                <h3>🎯 Ready to Level Up Your Skills?</h3>
+                <p>Let our AI analyze your profile and recommend personalized courses to advance your career.</p>
+                <button onclick="generateDevelopmentPlan()" class="generate-plan-btn">🤖 Get AI Recommendations</button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
