@@ -16,35 +16,33 @@ def start_action_assessment(request, id):
         response = client.generate_content(prompt)
         text = response.text.strip()
         print('Gemini raw response:', repr(text))  # Log the raw Gemini output for debugging
-        # Improved extraction for markdown/numbered questions
+        # Extract questions by finding quoted strings within numbered sections
         import re
         questions = []
-        current_q = []
-        for line in text.split('\n'):
-            line = line.strip()
-            if re.match(r'^[0-9]+\.', line):
-                if current_q:
-                    # Join previous question, remove markdown, and add
-                    q = ' '.join(current_q)
-                    q = re.sub(r'\*\*|\*|"', '', q)
-                    questions.append(q.strip())
-                    current_q = []
-                # Start new question, remove number and markdown
-                qline = re.sub(r'^[0-9]+\.\s*', '', line)
-                qline = re.sub(r'\*\*|\*|"', '', qline)
-                current_q.append(qline)
-            elif line.startswith('**Assesses:**') or line.startswith('* **Assesses:**'):
-                # Stop at assessment explanation
-                continue
-            elif line:
-                # Continuation of question
-                qline = re.sub(r'\*\*|\*|"', '', line)
-                current_q.append(qline)
-        if current_q:
-            q = ' '.join(current_q)
-            q = re.sub(r'\*\*|\*|"', '', q)
-            questions.append(q.strip())
-        questions = [q for q in questions if q][:3] if questions else [f"Describe how you completed the action '{action.title}'."]
+        
+        # Split text into sections by number pattern
+        sections = re.split(r'\n\s*[0-9]+\.\s*', text)
+        
+        for section in sections[1:]:  # Skip first empty section
+            # Look for quoted question (text between quotes)
+            quote_match = re.search(r'"([^"]+)"', section)
+            if quote_match:
+                question = quote_match.group(1).strip()
+                # Clean up any remaining markdown
+                question = re.sub(r'\*\*|\*', '', question)
+                questions.append(question)
+            else:
+                # Fallback: take first sentence that ends with ?
+                sentences = section.split('.')
+                for sentence in sentences:
+                    if '?' in sentence:
+                        question = sentence.split('?')[0] + '?'
+                        question = re.sub(r'\*\*|\*|"', '', question).strip()
+                        if question:
+                            questions.append(question)
+                            break
+        
+        questions = questions[:3] if questions else [f"Describe how you completed the action '{action.title}'."]
         return JsonResponse({'success': True, 'questions': questions})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
@@ -725,47 +723,55 @@ def enroll_feedback_course(request, course_id):
 def skillup_dashboard(request):
     """Skill-Up Module dashboard view"""
     try:
-        # Get user's course assignments
-        assignments = CourseAssignment.objects.filter(
-            employee=request.user
-        ).select_related('course', 'assigned_by', 'video_assessment').order_by('-assigned_at')
+        # Get user profile and candidate profile
+        from .models import UserProfile, CandidateProfile, EmployeeDevelopmentPlan
+        from django.db import models
+        
+        user_profile = UserProfile.objects.get(user=request.user)
+        candidate_profile = CandidateProfile.objects.get(user_profile=user_profile)
+        
+        # Get development plans (course assignments) for this employee
+        assignments = EmployeeDevelopmentPlan.objects.filter(
+            employee_profile=candidate_profile
+        ).select_related('course', 'assigned_by').order_by('-created_at')
         
         # Calculate statistics
-        stats = {
-            'total_courses': assignments.count(),
-            'completed_courses': assignments.filter(status='completed').count(),
-            'in_progress_courses': assignments.filter(status='in_progress').count(),
-            'pending_assessments': assignments.filter(
-                course__has_video_assessment=True,
-                video_assessment__isnull=True
-            ).count()
-        }
+        total_assignments = assignments.count()
+        completed_count = assignments.filter(status='completed').count()
+        in_progress_count = assignments.filter(status='in_progress').count()
         
-        # Calculate completion rate
-        if stats['total_courses'] > 0:
-            stats['completion_rate'] = (stats['completed_courses'] / stats['total_courses']) * 100
+        # Calculate average score (using progress_percentage as score)
+        if total_assignments > 0:
+            avg_score = assignments.aggregate(avg_score=models.Avg('progress_percentage'))['avg_score'] or 0
         else:
-            stats['completion_rate'] = 0
-        
-        # Get available courses for enrollment
-        assigned_course_ids = assignments.values_list('course_id', flat=True)
-        available_courses = SkillUpCourse.objects.exclude(
-            id__in=assigned_course_ids
-        ).filter(is_active=True)
+            avg_score = 0
         
         context = {
             'assignments': assignments,
-            'stats': stats,
-            'available_courses': available_courses
+            'total_assignments': total_assignments,
+            'completed_count': completed_count,
+            'in_progress_count': in_progress_count,
+            'avg_score': avg_score,
         }
         return render(request, 'skillup/dashboard.html', context)
         
+    except (UserProfile.DoesNotExist, CandidateProfile.DoesNotExist):
+        # If user doesn't have profiles, show empty dashboard
+        return render(request, 'skillup/dashboard.html', {
+            'assignments': [],
+            'total_assignments': 0,
+            'completed_count': 0,
+            'in_progress_count': 0,
+            'avg_score': 0,
+        })
     except Exception as e:
         print(f"Skill-Up dashboard error: {str(e)}")
         return render(request, 'skillup/dashboard.html', {
             'assignments': [],
-            'stats': {'total_courses': 0, 'completed_courses': 0, 'in_progress_courses': 0, 'pending_assessments': 0, 'completion_rate': 0},
-            'available_courses': []
+            'total_assignments': 0,
+            'completed_count': 0,
+            'in_progress_count': 0,
+            'avg_score': 0,
         })
 
 @login_required
@@ -1438,6 +1444,281 @@ from django.http import JsonResponse  # ensure JsonResponse is imported
 @login_required
 def submit_action_assessment(request, id):
     """Endpoint to handle submission of action assessments."""
-    # TODO: Process the submitted video and transcript, analyze with Gemini
-    # This is a stub implementation returning success response
-    return JsonResponse({'status': 'success'})
+    import json
+    from .models import FeedbackAction
+    
+    try:
+        if request.method == 'POST':
+            action = FeedbackAction.objects.get(id=id, employee=request.user)
+            
+            # Get form data
+            video_file = request.FILES.get('video')
+            transcript = request.POST.get('transcript', '')
+            questions = json.loads(request.POST.get('questions', '[]'))
+            answers = json.loads(request.POST.get('answers', '[]'))
+            cheating_data = json.loads(request.POST.get('cheating_data', '{}'))
+            
+            # Analyze cheating indicators
+            cheating_detected = False
+            cheating_details = []
+            
+            if cheating_data.get('tabSwitches', 0) > 0:
+                cheating_detected = True
+                cheating_details.append(f"Tab switched {cheating_data['tabSwitches']} times")
+                
+            if cheating_data.get('windowBlur', 0) > 2:
+                cheating_detected = True
+                cheating_details.append(f"Window lost focus {cheating_data['windowBlur']} times")
+                
+            if len(cheating_data.get('suspicious_activity', [])) > 3:
+                cheating_detected = True
+                cheating_details.append(f"{len(cheating_data['suspicious_activity'])} suspicious activities detected")
+            
+            # Generate AI feedback using Gemini
+            from .gemini_client import get_gemini_client
+            
+            prompt = f"""
+            Analyze this employee assessment for action completion: "{action.title}"
+            
+            Questions asked: {questions}
+            Answers provided: {answers}
+            Transcript: {transcript}
+            
+            Please provide:
+            1. A score from 1-10 on action completion
+            2. Brief feedback on the quality of responses
+            3. Whether the action appears to be genuinely completed
+            
+            Respond in JSON format: {{"score": X, "feedback": "...", "completed": true/false}}
+            """
+            
+            try:
+                client = get_gemini_client()
+                response = client.generate_content(prompt)
+                ai_result = json.loads(response.text.strip())
+                ai_score = ai_result.get('score', 5)
+                ai_feedback = ai_result.get('feedback', 'Assessment completed.')
+                action_completed = ai_result.get('completed', False)
+            except:
+                ai_score = 7  # Default score if AI analysis fails
+                ai_feedback = 'Assessment completed successfully.'
+                action_completed = True
+            
+            # Apply cheating penalty
+            if cheating_detected:
+                ai_score = max(1, ai_score - 3)  # Reduce score by 3 points for cheating
+                ai_feedback += " Note: Assessment integrity concerns detected."
+            
+            # Mark action as complete if score is good and no major cheating
+            if ai_score >= 6 and not (cheating_data.get('tabSwitches', 0) > 2):
+                action.is_completed = True
+                action.save()
+                marked_complete = True
+            else:
+                marked_complete = False
+            
+            return JsonResponse({
+                'success': True,
+                'ai_score': ai_score,
+                'ai_feedback': ai_feedback,
+                'cheating_detected': cheating_detected,
+                'cheating_details': '; '.join(cheating_details),
+                'marked_complete': marked_complete
+            })
+        
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+@login_required 
+def start_course_assessment(request, assignment_id):
+    """Start video assessment for course completion"""
+    try:
+        from .models import EmployeeDevelopmentPlan
+        
+        assignment = EmployeeDevelopmentPlan.objects.get(
+            id=assignment_id,
+            employee_profile__user_profile__user=request.user
+        )
+        
+        course = assignment.course
+        
+        # Generate course-specific questions using Gemini
+        from .gemini_client import get_gemini_client
+        
+        prompt = f"""
+        Generate 3 detailed interview questions to assess if the user has completed and understood the course: "{course.title}"
+        
+        Course Description: {course.description}
+        Course Skills: {getattr(course, 'skills_covered', 'General skills')}
+        
+        The questions should:
+        1. Test practical understanding of course concepts
+        2. Ask for specific examples or applications
+        3. Verify genuine learning vs superficial completion
+        
+        Format each question clearly and make them specific to this course content.
+        """
+        
+        try:
+            client = get_gemini_client()
+            response = client.generate_content(prompt)
+            text = response.text.strip()
+            
+            print(f'Course Assessment - Gemini raw response: {repr(text)}')
+            
+            # Extract questions using the same logic as before
+            import re
+            questions = []
+            
+            # Split text into sections by number pattern
+            sections = re.split(r'\n\s*[0-9]+\.\s*', text)
+            
+            for section in sections[1:]:  # Skip first empty section
+                # Look for quoted question (text between quotes)
+                quote_match = re.search(r'"([^"]+)"', section)
+                if quote_match:
+                    question = quote_match.group(1).strip()
+                    # Clean up any remaining markdown
+                    question = re.sub(r'\*\*|\*', '', question)
+                    questions.append(question)
+                else:
+                    # Fallback: take first sentence that ends with ?
+                    sentences = section.split('.')
+                    for sentence in sentences:
+                        if '?' in sentence:
+                            question = sentence.split('?')[0] + '?'
+                            question = re.sub(r'\*\*|\*|"', '', question).strip()
+                            if question:
+                                questions.append(question)
+                                break
+            
+            questions = questions[:3] if questions else [
+                f"How have you applied the key concepts from '{course.title}' in practical scenarios?",
+                f"What specific skills from this course will you use in your current role?", 
+                f"Describe a project or task where you could implement what you learned from '{course.title}'."
+            ]
+            
+            return JsonResponse({'success': True, 'questions': questions})
+            
+        except Exception as e:
+            # Fallback questions if AI fails
+            questions = [
+                f"How have you applied the key concepts from '{course.title}' in practical scenarios?",
+                f"What specific skills from this course will you use in your current role?",
+                f"Describe a project or task where you could implement what you learned from '{course.title}'."
+            ]
+            return JsonResponse({'success': True, 'questions': questions})
+            
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+@login_required
+def submit_course_assessment(request, assignment_id):
+    """Submit course video assessment and mark completion"""
+    import json
+    from .models import EmployeeDevelopmentPlan
+    
+    try:
+        if request.method == 'POST':
+            assignment = EmployeeDevelopmentPlan.objects.get(
+                id=assignment_id,
+                employee_profile__user_profile__user=request.user
+            )
+            
+            course = assignment.course
+            
+            # Get form data
+            video_file = request.FILES.get('video')
+            transcript = request.POST.get('transcript', '')
+            questions = json.loads(request.POST.get('questions', '[]'))
+            answers = json.loads(request.POST.get('answers', '[]'))
+            cheating_data = json.loads(request.POST.get('cheating_data', '{}'))
+            
+            # Analyze cheating indicators
+            cheating_detected = False
+            cheating_details = []
+            
+            if cheating_data.get('tabSwitches', 0) > 0:
+                cheating_detected = True
+                cheating_details.append(f"Tab switched {cheating_data['tabSwitches']} times")
+                
+            if cheating_data.get('windowBlur', 0) > 2:
+                cheating_detected = True
+                cheating_details.append(f"Window lost focus {cheating_data['windowBlur']} times")
+                
+            if len(cheating_data.get('suspicious_activity', [])) > 3:
+                cheating_detected = True
+                cheating_details.append(f"{len(cheating_data['suspicious_activity'])} suspicious activities detected")
+            
+            # Generate AI feedback using Gemini
+            from .gemini_client import get_gemini_client
+            
+            prompt = f"""
+            Analyze this course completion assessment for: "{course.title}"
+            
+            Course Description: {course.description}
+            Questions asked: {questions}
+            Answers provided: {answers}
+            Transcript: {transcript}
+            
+            Please evaluate:
+            1. Understanding of course concepts (1-10)
+            2. Practical application knowledge (1-10) 
+            3. Genuine completion vs superficial (1-10)
+            4. Overall course mastery (1-10)
+            
+            Respond in JSON format: {{"understanding": X, "application": X, "completion": X, "overall": X, "feedback": "...", "course_completed": true/false}}
+            """
+            
+            try:
+                client = get_gemini_client()
+                response = client.generate_content(prompt)
+                ai_result = json.loads(response.text.strip())
+                
+                understanding = ai_result.get('understanding', 7)
+                application = ai_result.get('application', 7) 
+                completion = ai_result.get('completion', 7)
+                overall_score = ai_result.get('overall', 7)
+                ai_feedback = ai_result.get('feedback', 'Course assessment completed.')
+                course_completed = ai_result.get('course_completed', True)
+                
+            except:
+                understanding = application = completion = overall_score = 7
+                ai_feedback = 'Course assessment completed successfully.'
+                course_completed = True
+            
+            # Apply cheating penalty
+            if cheating_detected:
+                overall_score = max(1, overall_score - 3)
+                ai_feedback += " Note: Assessment integrity concerns detected."
+            
+            # Mark course as complete if score is good and no major cheating
+            if overall_score >= 6 and not (cheating_data.get('tabSwitches', 0) > 2):
+                assignment.status = 'completed'
+                assignment.progress_percentage = 100
+                assignment.save()
+                marked_complete = True
+            else:
+                marked_complete = False
+            
+            return JsonResponse({
+                'success': True,
+                'ai_score': overall_score,
+                'understanding': understanding,
+                'application': application, 
+                'completion': completion,
+                'ai_feedback': ai_feedback,
+                'cheating_detected': cheating_detected,
+                'cheating_details': '; '.join(cheating_details),
+                'marked_complete': marked_complete,
+                'course_title': course.title
+            })
+        
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

@@ -25,6 +25,8 @@ from hr_app.views import (
     candidate_dashboard, manager_dashboard, admin_dashboard, reprocess_resume, upload_resume,
     generate_development_plan, enroll_course, update_course_progress, custom_logout,
     professional_development_view, feedback_view, mark_action_complete, enroll_feedback_course,
+    # Assessment endpoints
+    start_action_assessment, submit_action_assessment, start_course_assessment, submit_course_assessment,
     # Skill-Up Module views
     skillup_dashboard, start_video_assessment, analyze_video_frame, complete_video_assessment,
     admin_skillup_dashboard, assign_course_api, view_assignment_progress, view_assessment_details,
@@ -83,6 +85,8 @@ urlpatterns = [
     path('api/ai-feedback-suggestion/', ai_feedback_suggestion, name='ai_feedback_suggestion'),
     path('start-action-assessment/<int:id>/', start_action_assessment, name='start_action_assessment'),  # added assessment endpoint
     path('submit-action-assessment/<int:id>/', submit_action_assessment, name='submit_action_assessment'),  # added assessment endpoint
+    path('start-course-assessment/<int:assignment_id>/', start_course_assessment, name='start_course_assessment'),  # course assessment endpoint
+    path('submit-course-assessment/<int:assignment_id>/', submit_course_assessment, name='submit_course_assessment'),  # course assessment endpoint
 ]
 
 if settings.DEBUG:
