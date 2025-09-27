@@ -83,6 +83,28 @@
     padding: 3rem;
     color: #666;
 }
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 100%;
+    position: relative;
+}
 </style>
 {% endblock %}
 
@@ -226,65 +248,138 @@
     {% endif %}
 </div>
 
+<!-- Modal for AI Assessment -->
+<div id="aiAssessmentModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); align-items:center; justify-content:center;">
+  <div style="background:#fff; padding:2rem; border-radius:8px; max-width:600px; width:100%; position:relative;">
+    <h3>AI Video Assessment</h3>
+    <video id="assessmentVideo" width="480" height="320" autoplay muted style="background:#222;"></video>
+    <div id="assessmentQuestions"></div>
+    <div id="assessmentStatus" style="margin:1rem 0; color:#007bff;"></div>
+    <button id="startAssessmentBtn" class="btn btn-primary">Start Assessment</button>
+    <button id="closeAssessmentBtn" class="btn btn-secondary" style="position:absolute; top:1rem; right:1rem;">&times;</button>
+  </div>
+</div>
 <script>
+let currentActionId = null;
+let assessmentStream = null;
+let assessmentRecorder = null;
+let recordedChunks = [];
+let assessmentQuestions = [];
+let assessmentAnswers = [];
+let currentQuestionIdx = 0;
+let assessmentTranscript = '';
+
 function markActionComplete(actionId) {
-    fetch(`/mark-action-complete/${actionId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
+  // Instead of marking complete, start AI assessment modal
+  currentActionId = actionId;
+  document.getElementById('aiAssessmentModal').style.display = 'flex';
+  document.getElementById('assessmentStatus').innerText = 'Fetching questions...';
+  document.getElementById('assessmentQuestions').innerHTML = '';
+  document.getElementById('startAssessmentBtn').style.display = '';
+  fetch(`/start-action-assessment/${actionId}/`)
+    .then(r => r.json())
     .then(data => {
-        if (data.status === 'success') {
-            alert('Action marked as completed!');
-            location.reload();
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred.');
+      if (data.success) {
+        assessmentQuestions = data.questions;
+        document.getElementById('assessmentQuestions').innerHTML = '<ol>' + assessmentQuestions.map(q => `<li>${q}</li>`).join('') + '</ol>';
+        document.getElementById('assessmentStatus').innerText = 'Ready to start.';
+      } else {
+        document.getElementById('assessmentStatus').innerText = 'Error: ' + data.error;
+      }
     });
 }
-
-function enrollInCourse(courseId) {
-    fetch(`/enroll-feedback-course/${courseId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            alert('Successfully enrolled in course!');
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred.');
-    });
+document.getElementById('closeAssessmentBtn').onclick = function() {
+  document.getElementById('aiAssessmentModal').style.display = 'none';
+  if (assessmentStream) {
+    assessmentStream.getTracks().forEach(track => track.stop());
+  }
+};
+document.getElementById('startAssessmentBtn').onclick = async function() {
+  // Start webcam and assessment
+  document.getElementById('assessmentStatus').innerText = 'Starting webcam...';
+  assessmentAnswers = [];
+  currentQuestionIdx = 0;
+  assessmentTranscript = '';
+  try {
+    assessmentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    document.getElementById('assessmentVideo').srcObject = assessmentStream;
+    recordedChunks = [];
+    assessmentRecorder = new MediaRecorder(assessmentStream);
+    assessmentRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    assessmentRecorder.start();
+    document.getElementById('assessmentStatus').innerText = 'Asking questions...';
+    askNextQuestion();
+  } catch (e) {
+    document.getElementById('assessmentStatus').innerText = 'Webcam error: ' + e;
+  }
+};
+async function askNextQuestion() {
+  if (currentQuestionIdx >= assessmentQuestions.length) {
+    finishAssessment();
+    return;
+  }
+  const q = assessmentQuestions[currentQuestionIdx];
+  document.getElementById('assessmentStatus').innerText = 'Q' + (currentQuestionIdx+1) + ': ' + q;
+  // Use TTS to ask question
+  const utter = new SpeechSynthesisUtterance(q);
+  speechSynthesis.speak(utter);
+  utter.onend = () => {
+    // Start STT for answer
+    startSpeechRecognition();
+  };
 }
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
+function startSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('assessmentStatus').innerText = 'Speech recognition not supported.';
+    return;
+  }
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  document.getElementById('assessmentStatus').innerText += '\nListening for answer...';
+  recognition.start();
+  recognition.onresult = function(event) {
+    const answer = event.results[0][0].transcript;
+    assessmentAnswers.push(answer);
+    assessmentTranscript += `Q${currentQuestionIdx+1}: ${assessmentQuestions[currentQuestionIdx]}\nA: ${answer}\n`;
+    currentQuestionIdx++;
+    askNextQuestion();
+  };
+  recognition.onerror = function(event) {
+    document.getElementById('assessmentStatus').innerText = 'Speech recognition error: ' + event.error;
+    assessmentAnswers.push('');
+    currentQuestionIdx++;
+    askNextQuestion();
+  };
+}
+function finishAssessment() {
+  assessmentRecorder.stop();
+  assessmentRecorder.onstop = function() {
+    const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+    const formData = new FormData();
+    formData.append('video', videoBlob, 'assessment.webm');
+    formData.append('transcript', assessmentTranscript);
+    formData.append('questions', JSON.stringify(assessmentQuestions));
+    formData.append('answers', JSON.stringify(assessmentAnswers));
+    document.getElementById('assessmentStatus').innerText = 'Uploading and analyzing...';
+    fetch(`/submit-action-assessment/${currentActionId}/`, {
+      method: 'POST',
+      body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('assessmentStatus').innerText = `Assessment complete! AI Score: ${data.ai_score}\n${data.ai_feedback}` + (data.cheating_detected ? '\nCheating detected.' : '');
+        if (data.marked_complete) {
+          setTimeout(() => location.reload(), 2000);
         }
-    }
-    return cookieValue;
+      } else {
+        document.getElementById('assessmentStatus').innerText = 'Error: ' + data.error;
+      }
+    });
+  };
 }
 </script>
 {% endblock %}

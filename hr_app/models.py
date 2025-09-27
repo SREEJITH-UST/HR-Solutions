@@ -3,6 +3,23 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 import json
 
+class FeedbackActionAssessment(models.Model):
+    """Stores video-based AI assessment for feedback actions"""
+    action = models.OneToOneField('FeedbackAction', on_delete=models.CASCADE, related_name='assessment')
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='action_assessments')
+    video = models.FileField(upload_to='action_assessments/videos/')
+    transcript = models.TextField()
+    ai_score = models.FloatField(default=0.0)
+    ai_feedback = models.TextField(blank=True)
+    questions_asked = models.JSONField(default=list)
+    answers = models.JSONField(default=list)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    cheating_detected = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Assessment for {self.action.title} by {self.employee.username}"
+
 class UserProfile(models.Model):
     USER_TYPES = [
         ('candidate', 'Candidate'),

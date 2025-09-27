@@ -29,7 +29,8 @@ from hr_app.views import (
     skillup_dashboard, start_video_assessment, analyze_video_frame, complete_video_assessment,
     admin_skillup_dashboard, assign_course_api, view_assignment_progress, view_assessment_details,
     # Admin Dashboard views
-    admin_employee_detail, admin_submit_feedback
+    admin_employee_detail, admin_employee_feedback, admin_submit_feedback,
+    ai_feedback_suggestion, start_action_assessment, submit_action_assessment  # added assessment endpoints
 )
 
 urlpatterns = [
@@ -72,9 +73,16 @@ urlpatterns = [
     path('api/assign-course/', assign_course_api, name='assign_course_api'),
     
     # Admin Dashboard URLs
-    path('hr-admin/employees/', admin_dashboard, name='admin_dashboard'),
+    path('hr-admin/employees/', admin_dashboard, name='hr_admin_dashboard'),
+    path('hr-admin/employees/filter/', admin_dashboard, name='admin_dashboard_filter'),
     path('hr-admin/employee/<int:employee_id>/', admin_employee_detail, name='admin_employee_detail'),
-    path('hr-admin/employee/<int:employee_id>/feedback/', admin_submit_feedback, name='admin_submit_feedback'),
+    path('hr-admin/employee/<int:employee_id>/feedback/', admin_employee_feedback, name='admin_employee_feedback'),
+    path('hr-admin/employee/<int:employee_id>/feedback/submit/', admin_submit_feedback, name='admin_submit_feedback'),
+    
+    # AI Feedback Suggestion API
+    path('api/ai-feedback-suggestion/', ai_feedback_suggestion, name='ai_feedback_suggestion'),
+    path('start-action-assessment/<int:id>/', start_action_assessment, name='start_action_assessment'),  # added assessment endpoint
+    path('submit-action-assessment/<int:id>/', submit_action_assessment, name='submit_action_assessment'),  # added assessment endpoint
 ]
 
 if settings.DEBUG:

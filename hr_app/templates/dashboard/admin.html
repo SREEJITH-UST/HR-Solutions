@@ -277,6 +277,33 @@
             font-style: italic;
         }
         
+        /* Smooth transitions for filtering */
+        .card {
+            transition: opacity 0.3s ease;
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* Loading spinner for filters */
+        .filter-loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #dc3545;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         .system-log {
             max-height: 300px;
             overflow-y: auto;
@@ -372,21 +399,36 @@
                         <a href="#" class="btn">Add New User</a>
                     </div>
                     
-                    <div class="filter-bar">
-                        <select class="filter-select">
-                            <option>All User Types</option>
-                            <option>Candidates</option>
-                            <option>Managers</option>
-                            <option>Administrators</option>
+                    <form id="filterForm" method="get" class="filter-bar">
+                        <select name="role" id="roleFilter" class="filter-select">
+                            <option value="">All User Types ({{ total_candidates|add:total_managers|add:total_admins }})</option>
+                            <option value="candidate" {% if role_filter == 'candidate' %}selected{% endif %}>Candidates ({{ total_candidates }})</option>
+                            <option value="manager" {% if role_filter == 'manager' %}selected{% endif %}>Managers ({{ total_managers }})</option>
+                            <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Administrators ({{ total_admins }})</option>
                         </select>
-                        <select class="filter-select">
-                            <option>All Status</option>
-                            <option>Active</option>
-                            <option>Inactive</option>
-                            <option>Pending</option>
+                        <select name="status" id="statusFilter" class="filter-select">
+                            <option value="">All Status</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active ({{ active_employees }})</option>
+                            <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                            <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>Processing ({{ pending_processing }})</option>
                         </select>
-                        <input type="text" class="filter-input" placeholder="Search users...">
+                        <input type="text" name="search" id="searchInput" class="filter-input" placeholder="Search users..." value="{{ search_query }}">
+                        <button type="button" id="searchBtn" class="btn btn-sm" style="margin-left: 10px;">Search</button>
+                        {% if search_query or status_filter or role_filter %}
+                            <button type="button" id="clearBtn" class="btn btn-secondary btn-sm" style="margin-left: 5px;">Clear</button>
+                        {% endif %}
+                    </form>
+                    
+                    <!-- Results info -->
+                    {% if search_query or status_filter or role_filter %}
+                    <div style="margin: 10px 0; padding: 8px; background: #f0f0f0; border-radius: 4px; font-size: 0.9em;">
+                        <strong>Filters applied:</strong>
+                        {% if search_query %}Search: "{{ search_query }}" {% endif %}
+                        {% if status_filter %}Status: {{ status_filter }} {% endif %}
+                        {% if role_filter %}Role: {{ role_filter }} {% endif %}
+                        | Showing {{ all_users|length }} result{{ all_users|length|pluralize }}
                     </div>
+                    {% endif %}
 
                     {% if all_users %}
                     {% for user_profile in all_users %}
@@ -403,53 +445,33 @@
                                 {{ user_profile.get_user_type_display }}
                             </span>
                             <a href="#" class="btn btn-secondary btn-sm">Edit</a>
-                            <a href="#" class="btn btn-sm">View</a>
+                            <a href="{% url 'admin_employee_detail' user_profile.user.id %}" class="btn btn-sm">View</a>
                         </div>
                     </div>
                     {% endfor %}
+                    
+                    <!-- Pagination -->
+                    {% if employees.has_other_pages %}
+                    <div class="pagination" style="margin-top: 20px; text-align: center;">
+                        {% if employees.has_previous %}
+                            <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if role_filter %}role={{ role_filter }}&{% endif %}page={{ employees.previous_page_number }}" class="btn btn-secondary btn-sm">« Previous</a>
+                        {% endif %}
+                        
+                        <span style="margin: 0 15px; font-weight: bold;">
+                            Page {{ employees.number }} of {{ employees.paginator.num_pages }}
+                        </span>
+                        
+                        {% if employees.has_next %}
+                            <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if role_filter %}role={{ role_filter }}&{% endif %}page={{ employees.next_page_number }}" class="btn btn-secondary btn-sm">Next »</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
                     {% else %}
                     <div class="no-data">
                         No users found in the system.
                     </div>
                     {% endif %}
-                </div>
-
-                <!-- System Analytics -->
-                <div class="card">
-                    <div class="card-title">System Analytics</div>
-                    <div class="analytics-grid">
-                        <div>
-                            <h4>User Registration Trends</h4>
-                            <div class="chart-container">
-                                <canvas id="registrationChart" width="400" height="200"></canvas>
-                            </div>
-                        </div>
-                        <div>
-                            <h4>Resume Processing Stats</h4>
-                            <div class="chart-container">
-                                <canvas id="processingChart" width="400" height="200"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- System Health -->
-                <div class="card">
-                    <div class="card-title">System Health</div>
-                    <div class="system-health">
-                        <div class="health-item health-good">
-                            <div class="health-status">98%</div>
-                            <div class="health-label">Server Health</div>
-                        </div>
-                        <div class="health-item health-good">
-                            <div class="health-status">Normal</div>
-                            <div class="health-label">Database</div>
-                        </div>
-                        <div class="health-item health-warning">
-                            <div class="health-status">High</div>
-                            <div class="health-label">CPU Usage</div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -485,71 +507,11 @@
                     </div>
                 </div>
 
-                <!-- Recent Activity -->
-                <div class="card">
-                    <div class="card-title">System Activity</div>
-                    <div class="system-log">
-                        <div class="log-entry">
-                            <span class="log-timestamp">2024-01-15 14:30:22</span>
-                            <span class="log-level-info">[INFO]</span>
-                            New user registration: john.doe@email.com
-                        </div>
-                        <div class="log-entry">
-                            <span class="log-timestamp">2024-01-15 14:25:15</span>
-                            <span class="log-level-info">[INFO]</span>
-                            Resume processing completed for user ID 123
-                        </div>
-                        <div class="log-entry">
-                            <span class="log-timestamp">2024-01-15 14:20:08</span>
-                            <span class="log-level-warning">[WARN]</span>
-                            High CPU usage detected: 85%
-                        </div>
-                        <div class="log-entry">
-                            <span class="log-timestamp">2024-01-15 14:15:33</span>
-                            <span class="log-level-info">[INFO]</span>
-                            Database backup completed successfully
-                        </div>
-                        <div class="log-entry">
-                            <span class="log-timestamp">2024-01-15 14:10:41</span>
-                            <span class="log-level-error">[ERROR]</span>
-                            Failed login attempt from IP 192.168.1.100
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Quick Stats -->
-                <div class="card">
-                    <div class="card-title">Quick Stats</div>
-                    <div style="display: grid; gap: 1rem;">
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: #f8f9fa; border-radius: 6px;">
-                            <span>Active Sessions</span>
-                            <strong>{{ active_sessions|default:12 }}</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: #f8f9fa; border-radius: 6px;">
-                            <span>Pending Processes</span>
-                            <strong>{{ pending_processes|default:3 }}</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: #f8f9fa; border-radius: 6px;">
-                            <span>Storage Used</span>
-                            <strong>{{ storage_used|default:"2.1 GB" }}</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: #f8f9fa; border-radius: 6px;">
-                            <span>API Calls Today</span>
-                            <strong>{{ api_calls_today|default:247 }}</strong>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- System Maintenance -->
-                <div class="card">
-                    <div class="card-title">Maintenance</div>
-                    <div style="display: grid; gap: 0.5rem;">
-                        <button class="btn btn-secondary" style="width: 100%;">Run Database Cleanup</button>
-                        <button class="btn btn-secondary" style="width: 100%;">Clear Cache</button>
-                        <button class="btn btn-secondary" style="width: 100%;">Generate Backup</button>
-                        <button class="btn" style="width: 100%;">System Restart</button>
-                    </div>
-                </div>
+
+
+
             </div>
         </div>
     </div>
@@ -592,6 +554,102 @@
                 ctx.font = '12px Arial';
                 ctx.fillText('Processing statistics', 50, 30);
             }
+        });
+
+        // Filter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleFilter = document.getElementById('roleFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            
+            // Store scroll position before page unload
+            function saveScrollPosition() {
+                sessionStorage.setItem('adminDashboardScroll', window.pageYOffset);
+            }
+            
+            // Restore scroll position after page load
+            function restoreScrollPosition() {
+                const savedScroll = sessionStorage.getItem('adminDashboardScroll');
+                if (savedScroll) {
+                    window.scrollTo(0, parseInt(savedScroll));
+                    sessionStorage.removeItem('adminDashboardScroll');
+                }
+            }
+            
+            // Function to apply filters with scroll position preservation
+            function applyFilters() {
+                saveScrollPosition();
+                
+                const params = new URLSearchParams();
+                if (roleFilter.value) params.append('role', roleFilter.value);
+                if (statusFilter.value) params.append('status', statusFilter.value);
+                if (searchInput.value.trim()) params.append('search', searchInput.value.trim());
+                
+                const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+                
+                // Show loading state
+                const userCards = document.querySelectorAll('.card');
+                userCards.forEach(card => {
+                    card.classList.add('loading');
+                });
+                
+                // Add loading spinner to search button
+                if (searchBtn && !searchBtn.querySelector('.filter-loading')) {
+                    const spinner = document.createElement('span');
+                    spinner.className = 'filter-loading';
+                    searchBtn.appendChild(spinner);
+                    searchBtn.disabled = true;
+                }
+                
+                // Navigate to new URL
+                setTimeout(() => {
+                    window.location.href = newUrl;
+                }, 100);
+            }
+            
+            // Function to clear all filters
+            function clearFilters() {
+                saveScrollPosition();
+                window.location.href = window.location.pathname;
+            }
+            
+            // Event listeners
+            if (roleFilter) {
+                roleFilter.addEventListener('change', applyFilters);
+            }
+            
+            if (statusFilter) {
+                statusFilter.addEventListener('change', applyFilters);
+            }
+            
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(applyFilters, 800); // Debounce search
+                });
+                
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        clearTimeout(searchTimeout);
+                        applyFilters();
+                    }
+                });
+            }
+            
+            if (searchBtn) {
+                searchBtn.addEventListener('click', applyFilters);
+            }
+            
+            if (clearBtn) {
+                clearBtn.addEventListener('click', clearFilters);
+            }
+            
+            // Restore scroll position on page load
+            restoreScrollPosition();
         });
     </script>
 </body>

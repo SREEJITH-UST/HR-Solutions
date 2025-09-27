@@ -1,3 +1,53 @@
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
+# --- Feedback Action Assessment APIs ---
+import random
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def start_action_assessment(request, id):
+    """API to start an assessment: returns AI-generated questions for the action."""
+    from .models import FeedbackAction
+    from .gemini_client import get_gemini_client
+    try:
+        action = FeedbackAction.objects.get(id=id, employee=request.user)
+        # Generate 3 questions using Gemini (or fallback)
+        prompt = f"Generate 3 interview-style questions to assess understanding and completion of the following action: {action.title}. Action details: {action.description}"
+        client = get_gemini_client()
+        response = client.generate_content(prompt)
+        text = response.text.strip()
+        print('Gemini raw response:', repr(text))  # Log the raw Gemini output for debugging
+        # Improved extraction for markdown/numbered questions
+        import re
+        questions = []
+        current_q = []
+        for line in text.split('\n'):
+            line = line.strip()
+            if re.match(r'^[0-9]+\.', line):
+                if current_q:
+                    # Join previous question, remove markdown, and add
+                    q = ' '.join(current_q)
+                    q = re.sub(r'\*\*|\*|"', '', q)
+                    questions.append(q.strip())
+                    current_q = []
+                # Start new question, remove number and markdown
+                qline = re.sub(r'^[0-9]+\.\s*', '', line)
+                qline = re.sub(r'\*\*|\*|"', '', qline)
+                current_q.append(qline)
+            elif line.startswith('**Assesses:**') or line.startswith('* **Assesses:**'):
+                # Stop at assessment explanation
+                continue
+            elif line:
+                # Continuation of question
+                qline = re.sub(r'\*\*|\*|"', '', line)
+                current_q.append(qline)
+        if current_q:
+            q = ' '.join(current_q)
+            q = re.sub(r'\*\*|\*|"', '', q)
+            questions.append(q.strip())
+        questions = [q for q in questions if q][:3] if questions else [f"Describe how you completed the action '{action.title}'."]
+        return JsonResponse({'success': True, 'questions': questions})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
 from django.http import HttpResponse, JsonResponse
@@ -16,7 +66,9 @@ from .services import ResumeProcessingService
 from .development_service import EmployeeDevelopmentService
 import json
 import threading
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
+from .gemini_client import get_gemini_client
+import re
 
 # Create your views here.
 
@@ -520,31 +572,96 @@ def professional_development_view(request):
 
 @login_required
 def feedback_view(request):
-    """Display manager feedback and recommendations"""
-    from .models import ManagerFeedback, FeedbackAction, FeedbackCourseRecommendation
+    """Display manager feedback and AI-powered recommendations"""
+    from .models import ManagerFeedback, FeedbackAction, FeedbackCourseRecommendation, CandidateProfile
     from collections import Counter
     from django.db.models import Avg
-    
+    from .development_service import EmployeeDevelopmentService
+    from django.db import transaction
+
     # Get all feedback for the current user
     feedbacks = ManagerFeedback.objects.filter(employee=request.user)
-    
+
     if feedbacks.exists():
         # Calculate average rating
         average_rating = feedbacks.aggregate(Avg('rating'))['rating__avg'] or 0
-        
+
         # Get common areas of concern
         all_areas = []
         for feedback in feedbacks:
             if feedback.areas_of_concern:
                 all_areas.extend(feedback.areas_of_concern)
         common_areas = dict(Counter(all_areas).most_common(5))
-        
+
         # Get recommended actions
-        recommended_actions = FeedbackAction.objects.filter(employee=request.user).order_by('priority', '-created_at')
-        
+        recommended_actions = list(FeedbackAction.objects.filter(employee=request.user).order_by('priority', '-created_at'))
+
         # Get course recommendations
-        recommended_courses = FeedbackCourseRecommendation.objects.filter(employee=request.user).select_related('course')
-        
+        recommended_courses = list(FeedbackCourseRecommendation.objects.filter(employee=request.user).select_related('course'))
+
+        # If no actions or courses exist, use Gemini to generate them
+        if not recommended_actions or not recommended_courses:
+            try:
+                # Get candidate profile for AI context
+                candidate_profile = CandidateProfile.objects.get(user_profile__user=request.user)
+                dev_service = EmployeeDevelopmentService()
+
+                # Use areas of concern and feedback messages as input for AI
+                feedback_text = '\n'.join([f.message for f in feedbacks])
+                areas = list(set(all_areas))
+                # For skill gap analysis, add areas as "areas_for_improvement"
+                candidate_profile.areas_for_improvement = areas
+                candidate_profile.save(update_fields=["areas_for_improvement"])
+
+                # Analyze skill gaps
+                skill_gap_result = dev_service.analyze_skill_gaps(candidate_profile)
+                skill_gaps = skill_gap_result.get("skill_gaps", [])
+
+                # Generate actions from skill gaps if none exist
+                if not recommended_actions and skill_gaps:
+                    with transaction.atomic():
+                        for gap in skill_gaps:
+                            FeedbackAction.objects.create(
+                                feedback=feedbacks.first(),  # Link to latest feedback
+                                employee=request.user,
+                                title=f"Improve {gap['skill_name']}",
+                                description=gap.get('reason', 'Focus on this area for improvement.'),
+                                priority=gap.get('priority', 'medium'),
+                                estimated_time_hours=8
+                            )
+                    recommended_actions = list(FeedbackAction.objects.filter(employee=request.user).order_by('priority', '-created_at'))
+
+                # Generate course recommendations from skill gaps if none exist
+                if not recommended_courses and skill_gaps:
+                    course_recs = dev_service.recommend_courses(skill_gaps, candidate_profile)
+                    with transaction.atomic():
+                        for course in course_recs:
+                            # Try to find or create a LearningCourse
+                            from .models import LearningCourse
+                            lc, _ = LearningCourse.objects.get_or_create(
+                                title=course['title'],
+                                defaults={
+                                    'description': course.get('description', ''),
+                                    'provider': course.get('provider', 'udemy'),
+                                    'course_url': course.get('course_url', ''),
+                                    'skill_category': course.get('skill_category', 'soft_skills'),
+                                    'difficulty_level': course.get('difficulty_level', 'beginner'),
+                                    'duration_hours': int(course.get('estimated_duration_hours', 8)),
+                                    'rating': float(course.get('estimated_rating', 4.0)),
+                                    'price': float(course.get('estimated_price', 0)),
+                                    'skills_covered': course.get('skills_covered', []),
+                                }
+                            )
+                            FeedbackCourseRecommendation.objects.get_or_create(
+                                feedback=feedbacks.first(),
+                                employee=request.user,
+                                course=lc,
+                                feedback_area_addressed=course.get('target_skill_gap', 'General')
+                            )
+                    recommended_courses = list(FeedbackCourseRecommendation.objects.filter(employee=request.user).select_related('course'))
+            except Exception as e:
+                print("[AI FEEDBACK RECOMMENDATION ERROR]", str(e))
+
         context = {
             'feedbacks': feedbacks,
             'average_rating': average_rating,
@@ -560,7 +677,7 @@ def feedback_view(request):
             'recommended_actions': [],
             'recommended_courses': [],
         }
-    
+
     return render(request, 'dashboard/feedback.html', context)
 
 @login_required
@@ -1027,7 +1144,7 @@ def admin_dashboard(request):
     from django.core.paginator import Paginator
     
     # Check if user is admin
-    if not request.user.is_staff and not (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin'):
+    if not request.user.is_staff and not (hasattr(request.user, 'userprofile') and request.user.userprofile.user_type == 'admin'):
         return redirect('candidate_dashboard')
     
     # Get all employees
@@ -1047,16 +1164,20 @@ def admin_dashboard(request):
     # Filter by status if provided
     status_filter = request.GET.get('status', '')
     if status_filter == 'active':
-        employees = employees.filter(is_active=True, userprofile__candidateprofile__resume_processed=True)
+        employees = employees.filter(is_active=True)
     elif status_filter == 'inactive':
         employees = employees.filter(is_active=False)
     elif status_filter == 'processing':
-        employees = employees.filter(userprofile__candidateprofile__resume_processed=False)
+        # Only filter for users who have candidate profiles that are being processed
+        employees = employees.filter(
+            userprofile__candidateprofile__isnull=False,
+            userprofile__candidateprofile__resume_processed=False
+        )
     
     # Filter by role if provided
     role_filter = request.GET.get('role', '')
     if role_filter:
-        employees = employees.filter(userprofile__role=role_filter)
+        employees = employees.filter(userprofile__user_type=role_filter)
     
     # Pagination
     paginator = Paginator(employees, 20)  # Show 20 employees per page
@@ -1071,6 +1192,7 @@ def admin_dashboard(request):
     
     context = {
         'employees': employees_page,
+        'all_users': [user.userprofile for user in employees_page if hasattr(user, 'userprofile')],
         'total_employees': total_employees,
         'active_employees': active_employees,
         'completed_profiles': completed_profiles,
@@ -1078,9 +1200,13 @@ def admin_dashboard(request):
         'search_query': search_query,
         'status_filter': status_filter,
         'role_filter': role_filter,
+        # Add some debug info
+        'total_candidates': UserProfile.objects.filter(user_type='candidate').count(),
+        'total_managers': UserProfile.objects.filter(user_type='manager').count(),
+        'total_admins': UserProfile.objects.filter(user_type='admin').count(),
     }
     
-    return render(request, 'admin/dashboard.html', context)
+    return render(request, 'dashboard/admin.html', context)
 
 @login_required
 def admin_employee_detail(request, employee_id):
@@ -1128,12 +1254,55 @@ def admin_employee_detail(request, employee_id):
             'feedback_history': feedback_history,
         }
         
-        return render(request, 'admin/employee_detail.html', context)
+        return render(request, 'employee_detail.html', context)
+        
+    except User.DoesNotExist:
+        return redirect('hr_admin_dashboard')
+    except Exception as e:
+        print(f"Employee detail error: {str(e)}")
+        return redirect('hr_admin_dashboard')
+
+@login_required
+def admin_employee_feedback(request, employee_id):
+    """Admin feedback page for a specific employee"""
+    print('DEBUG: Entered admin_employee_feedback')
+    print('DEBUG: user:', request.user.username, '| is_staff:', request.user.is_staff)
+    user_type = None
+    if hasattr(request.user, 'userprofile'):
+        user_type = getattr(request.user.userprofile, 'user_type', None)
+    print('DEBUG: user_type:', user_type)
+    # Check if user is admin
+    if not (request.user.is_staff or (user_type == 'admin')):
+        print('DEBUG: Permission denied, redirecting to candidate_dashboard')
+        return redirect('candidate_dashboard')
+    
+    try:
+        employee = User.objects.select_related('userprofile').get(id=employee_id)
+        
+        # Get candidate profile if exists
+        candidate_profile = None
+        try:
+            candidate_profile = employee.userprofile.candidateprofile
+        except:
+            pass
+        
+        # Get feedback history for this employee
+        feedback_history = ManagerFeedback.objects.filter(
+            employee=employee
+        ).select_related('manager').order_by('-created_at')
+        
+        context = {
+            'employee': employee,
+            'candidate_profile': candidate_profile,
+            'feedback_history': feedback_history,
+        }
+        
+        return render(request, 'admin/employee_feedback.html', context)
         
     except User.DoesNotExist:
         return redirect('admin_dashboard')
     except Exception as e:
-        print(f"Employee detail error: {str(e)}")
+        print(f"Employee feedback page error: {str(e)}")
         return redirect('admin_dashboard')
 
 @csrf_protect
@@ -1187,3 +1356,88 @@ def admin_submit_feedback(request, employee_id):
     except Exception as e:
         print(f"Feedback submission error: {str(e)}")
         return JsonResponse({'success': False, 'error': 'An error occurred while submitting feedback'})
+
+@csrf_exempt
+def ai_feedback_suggestion(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Only POST method allowed'})
+    try:
+        prompt = request.POST.get('prompt', '').strip()
+        if not prompt:
+            prompt = 'Suggest a constructive feedback message for an employee.'
+        client = get_gemini_client()
+        response = client.generate_content(prompt)
+        suggestion = response.text if hasattr(response, 'text') else str(response)
+        print('AI RAW SUGGESTION:', suggestion)
+        # Extract only the first option or sentence if multiple are present
+        # Prefer lines starting with Option 1, otherwise first non-empty line
+        option_match = re.search(r'Option 1.*?:\s*(["\“\']?)(.+?)\1\s*(?:\n|$)', suggestion, re.IGNORECASE)
+        if option_match:
+            suggestion = option_match.group(2).strip()
+        else:
+            # Fallback: first non-empty line that is not a heading
+            lines = [l.strip() for l in suggestion.splitlines() if l.strip() and not l.lower().startswith(('here', 'option', 'focus', 'improved', 'list', 'clarity', 'specificity', 'professionalism'))]
+            if lines:
+                suggestion = lines[0]
+        # Try to extract after 'Areas of Concern:' or 'Areas for Development:' or 'Message:'
+        match = re.search(r'(Areas of Concern|Areas for Development|Message)[:\s\*]*([\s\S]+)', suggestion, re.IGNORECASE)
+        if match:
+            suggestion = match.group(2).strip()
+        # Remove any line starting with 'Subject:'
+        suggestion = re.sub(r'^Subject:.*$', '', suggestion, flags=re.MULTILINE).strip()
+        # Remove any leading markdown or asterisks from the suggestion
+        suggestion = re.sub(r'^[\*\s]+', '', suggestion)
+        # Fallback: if suggestion is empty, use first non-empty, non-heading, non-Subject line
+        if not suggestion:
+            lines = [l.strip() for l in suggestion.splitlines() if l.strip() and not l.lower().startswith(('here', 'option', 'focus', 'improved', 'list', 'clarity', 'specificity', 'professionalism', 'subject'))]
+            if lines:
+                suggestion = lines[0]
+        # Extract bullet points after "Areas of Concern:" (with or without **)
+        areas_match = re.search(r'(?:\*\*)?Areas of Concern(?:\*\*)?:\s*([\s\S]*)', suggestion, re.IGNORECASE)
+        if areas_match:
+            areas_text = areas_match.group(1).strip()
+            # Extract all bullet points and join them with newlines
+            bullets = re.findall(r'^\s*\*\s*(.+)', areas_text, re.MULTILINE)
+            if bullets:
+                suggestion = '\n'.join(bullets)
+            elif areas_text and not areas_text.startswith('*'):
+                suggestion = areas_text
+        else:
+            # Extract text after "**Improved:**" if present
+            improved_match = re.search(r'\*\*Improved:\*\*\s*(.+)', suggestion, re.IGNORECASE)
+            if improved_match:
+                suggestion = improved_match.group(1).strip()
+            else:
+                # Extract first bullet point from anywhere
+                bullet_match = re.search(r'^\s*\*\s*(.+)', suggestion, re.MULTILINE)
+                if bullet_match:
+                    suggestion = bullet_match.group(1).strip()
+                else:
+                    # Remove any markdown formatting and get first meaningful line
+                    lines = [l.strip() for l in suggestion.splitlines() if l.strip() and not l.startswith(('**', 'Here', 'Option', 'Original', 'Subject'))]
+                    if lines:
+                        suggestion = lines[0]
+        
+        # Final extraction for Areas of Concern format
+        final_areas_match = re.search(r'Areas of Concern\s*:\s*([\s\S]*)', suggestion, re.IGNORECASE)
+        if final_areas_match:
+            areas_text = final_areas_match.group(1).strip()
+            bullets = re.findall(r'^\s*\*\s*(.+)', areas_text, re.MULTILINE)
+            if bullets:
+                suggestion = '\n'.join([b.strip() for b in bullets])
+        
+        # Clean up any remaining markdown
+        suggestion = re.sub(r'\*\*', '', suggestion).strip()
+        return JsonResponse({'success': True, 'suggestion': suggestion})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+from django.http import JsonResponse  # ensure JsonResponse is imported
+
+@csrf_exempt
+@login_required
+def submit_action_assessment(request, id):
+    """Endpoint to handle submission of action assessments."""
+    # TODO: Process the submitted video and transcript, analyze with Gemini
+    # This is a stub implementation returning success response
+    return JsonResponse({'status': 'success'})

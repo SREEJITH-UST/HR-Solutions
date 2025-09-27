@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% block title %}{{ employee.first_name }} {{ employee.last_name }} - Feedback Management{% endblock %}
+{% block extra_head %}
+<style>
+.feedback-page { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+.back-btn { display: inline-flex; align-items: center; gap: 0.5rem; color: #007bff; text-decoration: none; margin-bottom: 2rem; }
+.back-btn:hover { color: #0056b3; }
+.employee-header { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+.employee-info { display: flex; align-items: center; gap: 1.5rem; }
+.employee-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #007bff, #0056b3); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; font-weight: bold; }
+.employee-meta { flex: 1; }
+.employee-name { font-size: 1.5rem; font-weight: bold; color: #333; margin: 0; }
+.employee-role { color: #666; font-size: 1rem; margin: 0.25rem 0; }
+.feedback-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.feedback-form-card, .feedback-history-card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.card-title { font-size: 1.25rem; font-weight: bold; color: #333; margin-bottom: 1.5rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 0.5rem; }
+.form-group { margin-bottom: 1rem; }
+.form-label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: #555; }
+.form-control { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; transition: border-color 0.3s; }
+.form-control:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,0.25); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.btn { padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 1rem; transition: background 0.3s; display: inline-flex; align-items: center; gap: 0.5rem; }
+.btn-primary { background: #007bff; color: white; }
+.btn-primary:hover { background: #0056b3; }
+.btn-secondary { background: #6c757d; color: white; }
+.btn-secondary:hover { background: #545b62; }
+.feedback-item { background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #007bff; }
+.feedback-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+.feedback-subject { font-weight: 600; color: #333; }
+.feedback-rating { margin-left: 1rem; }
+.feedback-meta { color: #666; font-size: 0.875rem; }
+.feedback-message { color: #555; margin-bottom: 0.5rem; line-height: 1.5; }
+.areas-of-concern { margin-top: 0.75rem; }
+.concern-tag { background: #f8d7da; color: #721c24; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.25rem; display: inline-block; }
+.no-feedback { color: #666; font-style: italic; text-align: center; padding: 2rem; }
+.feedback-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { background: #f8f9fa; padding: 1rem; border-radius: 8px; text-align: center; }
+.stat-number { font-size: 1.5rem; font-weight: bold; color: #007bff; }
+.stat-label { font-size: 0.875rem; color: #666; margin-top: 0.25rem; }
+.rating-excellent { border-left-color: #28a745; }
+.rating-good { border-left-color: #17a2b8; }
+.rating-average { border-left-color: #ffc107; }
+.rating-poor { border-left-color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="feedback-page">
+    <a href="{% url 'admin_employee_detail' employee.id %}" class="back-btn">
+        ← Back to Employee Details
+    </a>
+
+    <!-- Employee Header -->
+    <div class="employee-header">
+        <div class="employee-info">
+            <div class="employee-avatar">
+                {{ employee.first_name.0 }}{{ employee.last_name.0 }}
+            </div>
+            <div class="employee-meta">
+                <h1 class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</h1>
+                <p class="employee-role">{{ employee.userprofile.get_user_type_display }} • {{ employee.email }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Stats -->
+    <div class="feedback-stats">
+        <div class="stat-card">
+            <div class="stat-number">{{ feedback_history|length }}</div>
+            <div class="stat-label">Total Feedback</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">
+                {% if feedback_history %}
+                    {% with latest=feedback_history|first %}
+                        {{ latest.rating|floatformat:1 }}⭐
+                    {% endwith %}
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+            <div class="stat-label">Latest Rating</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">
+                {% with recent_feedback=feedback_history|slice:":5" %}
+                    {% if recent_feedback %}
+                        {% for feedback in recent_feedback %}{{ feedback.rating }}{% if not forloop.last %}.{% endif %}{% endfor %}
+                        <span style="font-size: 0.8rem;">avg</span>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                {% endwith %}
+            </div>
+            <div class="stat-label">Recent Average</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="feedback-container">
+        <!-- Feedback Form -->
+        <div class="feedback-form-card">
+            <h2 class="card-title">💬 Submit New Feedback</h2>
+            
+            <form id="feedbackForm">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="subject" class="form-label">Subject</label>
+                        <input type="text" id="subject" name="subject" class="form-control" required 
+                               placeholder="Feedback subject" value="check in feedback">
+                    </div>
+                    <div class="form-group">
+                        <label for="rating" class="form-label">Rating</label>
+                        <select id="rating" name="rating" class="form-control" required>
+                            <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                            <option value="4">⭐⭐⭐⭐ Good</option>
+                            <option value="3" selected>⭐⭐⭐ Average</option>
+                            <option value="2">⭐⭐ Below Average</option>
+                            <option value="1">⭐ Poor</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="message" class="form-label">Message</label>
+                    <textarea id="message" name="message" class="form-control" rows="4" required placeholder="Write your feedback..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="areas_of_concern" class="form-label">Areas of Concern (Optional)</label>
+                    <textarea id="areas_of_concern" name="areas_of_concern" rows="2" class="form-control"
+                              placeholder="List specific areas that need improvement (separate with commas)..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    🤖 Improve & Submit Feedback
+                </button>
+            </form>
+        </div>
+
+        <!-- Feedback History -->
+        <div class="feedback-history-card">
+            <h2 class="card-title">📋 Feedback History</h2>
+            
+            <div class="feedback-list">
+                {% if feedback_history %}
+                    {% for feedback in feedback_history %}
+                    <div class="feedback-item rating-{% if feedback.rating >= 4 %}excellent{% elif feedback.rating == 3 %}average{% else %}poor{% endif %}">
+                        <div class="feedback-header">
+                            <div>
+                                <span class="feedback-subject">{{ feedback.subject }}</span>
+                                <span class="feedback-rating">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= feedback.rating %}⭐{% endif %}
+                                    {% endfor %}
+                                </span>
+                            </div>
+                            <div class="feedback-meta">
+                                {{ feedback.created_at|date:"M d, Y" }}
+                            </div>
+                        </div>
+                        
+                        <p class="feedback-message">{{ feedback.message }}</p>
+                        
+                        {% if feedback.areas_of_concern %}
+                        <div class="areas-of-concern">
+                            <strong style="color: #dc3545; font-size: 0.9rem;">Areas of Concern:</strong><br>
+                            {% for area in feedback.areas_of_concern %}
+                                <span class="concern-tag">{{ area }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="feedback-meta" style="margin-top: 0.75rem;">
+                            By {{ feedback.manager.first_name }} {{ feedback.manager.last_name }} at {{ feedback.created_at|date:"H:i" }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-feedback">
+                        No feedback history available for this employee.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="margin-top: 2rem; text-align: center;">
+        <a href="{% url 'admin_employee_detail' employee.id %}" class="btn btn-secondary">
+            ← Back to Employee Details
+        </a>
+    <a href="{% url 'hr_admin_dashboard' %}" class="btn btn-secondary">
+            🏠 Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Added assessment URLs using Django template tags -->
+<script>
+    // Replace 1 with the appropriate dynamic ID if available
+    const startAssessmentUrl = "{% url 'start_action_assessment' 1 %}";
+    const submitAssessmentUrl = "{% url 'submit_action_assessment' 1 %}";
+    console.log('Assessment URLs:', startAssessmentUrl, submitAssessmentUrl);
+</script>
+
+<script>
+// Helper function to improve content with AI
+function improveWithAI(content, type, subject) {
+    if (!content.trim()) return Promise.resolve('');
+    
+    let prompt;
+    if (type === 'message') {
+        prompt = `You are an HR feedback assistant. Improve the following feedback message for clarity, tone, and professionalism, but do not add any new information or hallucinate. Keep the context strictly as feedback.\n\nSubject: ${subject}\nMessage: ${content}`;
+    } else {
+        prompt = `You are an HR feedback assistant. Improve the following area of concern for clarity, specificity, and professionalism. Return only the improved version without any options, headers, or explanations. Do not add new information.\n\nArea of Concern: ${content}`;
+    }
+    
+    return fetch('/api/ai-feedback-suggestion/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: `prompt=${encodeURIComponent(prompt)}`
+    })
+    .then(response => response.json())
+    .then(data => data.success ? data.suggestion : content)
+    .catch(() => content);
+}
+
+// Handle feedback form submission with AI improvement
+document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const messageField = document.getElementById('message');
+    const areasField = document.getElementById('areas_of_concern');
+    const subjectField = document.getElementById('subject');
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const employeeId = {{ employee.id }};
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '🤖 Improving with AI...';
+    
+    // Improve message and areas with AI before submitting
+    Promise.all([
+        improveWithAI(messageField.value, 'message', subjectField.value),
+        areasField.value ? improveWithAI(areasField.value, 'areas', subjectField.value) : Promise.resolve('')
+    ])
+    .then(([improvedMessage, improvedAreas]) => {
+        // Update fields with improved content
+        messageField.value = improvedMessage || messageField.value;
+        if (improvedAreas) areasField.value = improvedAreas;
+        
+        submitBtn.innerHTML = '📝 Submitting...';
+        
+        // Now submit the form with improved content
+        const formData = new FormData(this);
+        return fetch(`/hr-admin/employee/${employeeId}/feedback/submit/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Feedback improved and submitted successfully!');
+            location.reload();
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('❌ An error occurred while processing feedback.');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '🤖 Improve & Submit Feedback';
+    });
+});
+</script>
+{% endblock %}

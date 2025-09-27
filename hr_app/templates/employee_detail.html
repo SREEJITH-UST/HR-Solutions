@@ -45,7 +45,7 @@
 
 {% block content %}
 <div class="employee-detail">
-    <a href="{% url 'admin_dashboard' %}" class="back-btn">
+    <a href="{% url 'hr_admin_dashboard' %}" class="back-btn">
         ← Back to Employee Directory
     </a>
 
@@ -67,14 +67,22 @@
                     <span>🕐 Last Login: {{ employee.last_login|date:"M d, Y H:i"|default:"Never" }}</span>
                 </div>
             </div>
-            <div>
-                {% if candidate_profile.resume_processed %}
-                    <span class="status-badge status-active">Profile Complete</span>
-                {% elif candidate_profile %}
-                    <span class="status-badge status-processing">Processing</span>
-                {% else %}
-                    <span class="status-badge status-inactive">No Profile</span>
-                {% endif %}
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 1rem;">
+                <!-- Status Badge -->
+                <div>
+                    {% if candidate_profile.resume_processed %}
+                        <span class="status-badge status-active">Profile Complete</span>
+                    {% elif candidate_profile %}
+                        <span class="status-badge status-processing">Processing</span>
+                    {% else %}
+                        <span class="status-badge status-inactive">No Profile</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Prominent Feedback Button -->
+                <a href="{% url 'admin_employee_feedback' employee.id %}" class="btn btn-success" style="font-weight: 600;">
+                    💬 Manage Feedback
+                </a>
             </div>
         </div>
     </div>
@@ -230,92 +238,16 @@
     </div>
     {% endif %}
 
-    <!-- Admin Feedback Section -->
-    <div class="detail-card full-width">
-        <h3 class="card-title">💬 Admin Feedback</h3>
-        
-        <!-- Feedback Form -->
-        <div class="feedback-form-container">
-            <form id="feedbackForm" style="margin-bottom: 2rem;">
-                {% csrf_token %}
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <label for="subject" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Subject:</label>
-                        <input type="text" id="subject" name="subject" required 
-                               style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
-                    </div>
-                    <div>
-                        <label for="rating" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Rating:</label>
-                        <select id="rating" name="rating" 
-                                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
-                            <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
-                            <option value="4">⭐⭐⭐⭐ Good</option>
-                            <option value="3" selected>⭐⭐⭐ Average</option>
-                            <option value="2">⭐⭐ Below Average</option>
-                            <option value="1">⭐ Poor</option>
-                        </select>
-                    </div>
-                </div>
-                <div style="margin-bottom: 1rem;">
-                    <label for="message" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Feedback Message:</label>
-                    <textarea id="message" name="message" rows="4" required
-                              style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"
-                              placeholder="Provide detailed feedback about the employee's performance..."></textarea>
-                </div>
-                <div style="margin-bottom: 1rem;">
-                    <label for="areas_of_concern" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Areas of Concern (Optional):</label>
-                    <textarea id="areas_of_concern" name="areas_of_concern" rows="2"
-                              style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"
-                              placeholder="List specific areas that need improvement (separate with commas)..."></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">Submit Feedback</button>
-            </form>
-        </div>
 
-        <!-- Previous Feedback History -->
-        <div class="feedback-history">
-            <h4 style="margin-bottom: 1rem; color: #555;">Feedback History</h4>
-            {% if feedback_history %}
-                {% for feedback in feedback_history %}
-                <div class="feedback-item" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid {% if feedback.rating >= 4 %}#28a745{% elif feedback.rating == 3 %}#ffc107{% else %}#dc3545{% endif %};">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                        <div>
-                            <strong style="color: #333;">{{ feedback.subject }}</strong>
-                            <span style="margin-left: 1rem;">
-                                {% for i in "12345" %}
-                                    {% if forloop.counter <= feedback.rating %}⭐{% endif %}
-                                {% endfor %}
-                            </span>
-                        </div>
-                        <small style="color: #666;">{{ feedback.created_at|date:"M d, Y H:i" }} by {{ feedback.manager.first_name }} {{ feedback.manager.last_name }}</small>
-                    </div>
-                    <p style="margin-bottom: 0.5rem; color: #555;">{{ feedback.message }}</p>
-                    {% if feedback.areas_of_concern %}
-                    <div style="margin-top: 0.75rem;">
-                        <strong style="color: #dc3545; font-size: 0.9rem;">Areas of Concern:</strong>
-                        <div style="margin-top: 0.25rem;">
-                            {% for area in feedback.areas_of_concern %}
-                                <span style="background: #f8d7da; color: #721c24; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-right: 0.5rem;">{{ area }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            {% else %}
-                <p style="color: #666; font-style: italic;">No feedback history available.</p>
-            {% endif %}
-        </div>
-    </div>
 
     <!-- Action Buttons -->
     <div class="action-buttons">
-        <a href="{% url 'admin_dashboard' %}" class="btn btn-primary">Back to Directory</a>
+    <a href="{% url 'hr_admin_dashboard' %}" class="btn btn-primary">← Back to Directory</a>
         {% if candidate_profile %}
-        <button onclick="reprocessProfile({{ employee.id }})" class="btn btn-warning">Reprocess Profile</button>
-        <button onclick="assignCourse({{ employee.id }})" class="btn btn-success">Assign Course</button>
+        <button onclick="reprocessProfile({{ employee.id }})" class="btn btn-warning">🔄 Reprocess Profile</button>
+        <button onclick="assignCourse({{ employee.id }})" class="btn btn-success">📚 Assign Course</button>
         {% endif %}
-        <button onclick="sendMessage({{ employee.id }})" class="btn btn-primary">Send Message</button>
+        <button onclick="sendMessage({{ employee.id }})" class="btn btn-primary">📧 Send Message</button>
     </div>
 </div>
 
@@ -337,33 +269,6 @@ function sendMessage(employeeId) {
     alert('Messaging feature coming soon.');
 }
 
-// Handle feedback form submission
-document.getElementById('feedbackForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const employeeId = {{ employee.id }};
-    
-    fetch(`/hr-admin/employee/${employeeId}/feedback/`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Feedback submitted successfully!');
-            location.reload(); // Reload to show the new feedback
-        } else {
-            alert('Error submitting feedback: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while submitting feedback.');
-    });
-});
+
 </script>
 {% endblock %}
