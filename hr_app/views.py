@@ -52,6 +52,7 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.contrib.sessions.models import Session
 from django.utils import timezone
 from django.db import models
 from .forms import LoginForm, SignupForm
@@ -79,6 +80,14 @@ def send_notification_email(request):
         fail_silently=False,
     )
     return HttpResponse("Email sent successfully!")
+
+def clear_user_sessions(user):
+    """Clear all existing sessions for a user to ensure single session per browser"""
+    user_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+    for session in user_sessions:
+        session_data = session.get_decoded()
+        if session_data.get('_auth_user_id') == str(user.id):
+            session.delete()
 
 def check_username_availability(request):
     """AJAX view to check username availability"""
@@ -132,7 +141,16 @@ def login_view(request):
                     password=login_form.cleaned_data['password']
                 )
                 if user:
+                    # Clear any existing sessions for this user to ensure single session
+                    clear_user_sessions(user)
+                    
+                    # Login the user (creates new session)
                     login(request, user)
+                    
+                    # Set session expiry settings for security
+                    request.session.set_expiry(3600)  # 1 hour session timeout
+                    request.session['last_activity'] = timezone.now().isoformat()
+                    
                     return redirect('dashboard')
                 else:
                     login_error = "Invalid username or password."
@@ -549,9 +567,27 @@ def home(request):
 
 @csrf_protect
 def custom_logout(request):
-    """Logs out user and shows feedback form before login page."""
+    """Logs out user with feedback form and comprehensive session cleanup."""
     if request.method == 'POST':
         feedback = request.POST.get('feedback', '').strip()
+        
+        # Comprehensive logout with session cleanup
+        current_session_key = request.session.session_key
+        user = request.user
+        
+        logout(request)
+        
+        # Clear any remaining session data for this user
+        if user and hasattr(user, 'id'):
+            clear_user_sessions(user)
+        
+        # Clear current session completely
+        if current_session_key:
+            try:
+                Session.objects.filter(session_key=current_session_key).delete()
+            except:
+                pass  # Session might already be deleted
+        
         # Optionally, save feedback to database or email it to admin here
         return render(request, 'accounts/logout_feedback.html', {'feedback_submitted': True})
     else:
@@ -1722,3 +1758,59 @@ def submit_course_assessment(request, assignment_id):
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+# --- Session Management APIs ---
+
+@login_required
+def session_status(request):
+    """API endpoint to check session status"""
+    from django.views.decorators.http import require_http_methods
+    
+    if request.method == 'GET':
+        # Check if session is valid and user is authenticated
+        if request.user.is_authenticated:
+            # Update last activity
+            request.session['last_activity'] = timezone.now().isoformat()
+            
+            # Calculate remaining session time
+            session_age = request.session.get_expiry_age()
+            
+            return JsonResponse({
+                'authenticated': True,
+                'username': request.user.username,
+                'session_remaining': session_age,
+                'last_activity': request.session.get('last_activity')
+            })
+        else:
+            return JsonResponse({'authenticated': False}, status=401)
+    
+    return JsonResponse({'error': 'Invalid method'}, status=405)
+
+
+@csrf_exempt
+@login_required
+def extend_session(request):
+    """API endpoint to extend user session"""
+    if request.method == 'POST':
+        try:
+            # Extend the session
+            request.session.set_expiry(settings.SESSION_COOKIE_AGE)
+            request.session['last_activity'] = timezone.now().isoformat()
+            
+            # Save the session
+            request.session.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Session extended successfully',
+                'new_expiry': request.session.get_expiry_age()
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Failed to extend session: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'error': 'Invalid method'}, status=405)
